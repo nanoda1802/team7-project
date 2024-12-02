@@ -38,6 +38,8 @@ model Assets {
 	cash Int @default(100000) @map("cash")
 	mileage Int @default(0) @map("mileage")
 	enhancer Int @default(10) @map("enhancer")
+  countA Int @default(0) @map("count_A")
+  countS Int @default(0) @map("count_S")
 
 	user Users @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
 	@@map("Assets")
@@ -100,9 +102,9 @@ model MyAgents {
 	myAgentKey Int @id @default(autoincrement()) @map("my_agent_key")
 	userKey Int @map("user_key")
 	agentKey Int @map("agent_key")
-  
+
 	level Int @default(1) @map("level")
-	rank Int @default(0) @map("rank")
+	class Int @default(0) @map("class")
 	count Int @default(1) @map("count")
 	obtainedAt DateTime @updatedAt @map("obtained_at")
 
