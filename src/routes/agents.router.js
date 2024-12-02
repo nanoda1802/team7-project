@@ -24,20 +24,16 @@ router.get("/agents", async (req, res, next) => {
 
   // orderBy 유효성 검사
   if (!validOrderBy.includes(orderBy)) {
-    return res
-      .status(400)
-      .json({
-        error: `유효하지 않은 orderBy 값입니다. 가능한 값: ${validOrderBy.join(", ")}`,
-      });
+    return res.status(400).json({
+      error: `유효하지 않은 orderBy 값입니다. 가능한 값: ${validOrderBy.join(", ")}`,
+    });
   }
 
   // orderHow 유효성 검사
   if (!validOrderHow.includes(orderHow)) {
-    return res
-      .status(400)
-      .json({
-        error: `유효하지 않은 orderHow 값입니다. 가능한 값: ${validOrderHow.join(", ")}`,
-      });
+    return res.status(400).json({
+      error: `유효하지 않은 orderHow 값입니다. 가능한 값: ${validOrderHow.join(", ")}`,
+    });
   }
 
   // 기본 쿼리 설정
@@ -88,8 +84,60 @@ router.get("/users/agents", async (req, res, next) => {
 });
 
 router.put("/gacha", async (req, res, next) => {
-    const {numberOfGacha,agentKey} = req.body;
+  const { numberOfGacha, agentKey } = req.body;
+  const { user_key } = req.user;
 
+  try {
+    const userAssets = await prisma.assets.findUnique({
+      where: { userKey: user_key },
+    });
+
+    const totalCost = numberOfGacha * 1000;
+    if (userAssets.cash < totalCost) {
+      return res.status(400).json({ error: "캐시가 부족합니다." });
+    }
+
+    const agents = await prisma.agents.findMany({
+      select: {
+        agentKey: true,
+        name: true,
+        grade: true,
+      },
+    });
+
+    const aAgents = agents.filter((agent) => agent.grade === "a");
+    const sAgents = agents.filter((agent) => agent.grade === "s");
+
+    let enhancerCount = 0;
+    let countA = 0;
+    let countS = 0;
+
+    for (let i = 0; i < numberOfGacha; i++) {
+      const random = Math.random();
+
+      if (random <= 0.7) {
+        // 70% 확률: 강화재료
+        enhancerCount++;
+        countA++;
+        countS++;
+      } else if (random <= 0.94) {
+        // 24% 확률: A급 에이전트
+
+        countA = 0;
+
+        await updateMyAgents(user_key, selectedAgent.agentKey);
+      } else {
+        // 6% 확률: S급 에이전트
+
+        countS = 0;
+
+        await updateMyAgents(user_key, selectedAgent.agentKey);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "서버 오류" });
+  }
 });
 
 export default router;
