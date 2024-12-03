@@ -7,87 +7,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Agents {
-  agent_key Int             @id @default(autoincrement())
-  name      String
-  team      String
-  position  Agents_position
-  grade     Agents_grade
-  MyAgents  MyAgents[]
-  Stats     Stats?
+
+model Users {
+  userKey       Int        @id @default(autoincrement()) @map("user_key")
+  id            String     @map("id")
+  pw            String     @map("pw")
+  nickname      String     @map("nickname")
+  squadMem1     Int        @default(0) @map("squad_mem_1")
+  squadMem2     Int        @default(0) @map("squad_mem_2")
+  squadMem3     Int        @default(0) @map("squad_mem_3")
+  favoriteAgent Int        @default(0) @map("favorite_agent")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  asset         Assets?
+  myAgent       MyAgents[]
+  rank          Ranks?
+
+  @@map("Users")
 }
 
 model Assets {
-  asset_key Int   @id @default(autoincrement())
-  user_key  Int   @unique
-  cash      Int   @default(100000)
-  mileage   Int   @default(0)
-  enhancer  Int   @default(10)
-  count_A   Int   @default(0)
-  count_S   Int   @default(0)
-  Users     Users @relation(fields: [user_key], references: [user_key], onDelete: Cascade)
-}
+  assetKey Int   @id @default(autoincrement()) @map("asset_key")
+  userKey  Int   @unique @map("user_key")
+  cash     Int   @default(100000) @map("cash")
+  mileage  Int   @default(0) @map("mileage")
+  enhancer Int   @default(10) @map("enhancer")
+  countA   Int   @default(0) @map("count_A")
+  countS   Int   @default(0) @map("count_S")
+  user     Users @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
 
-model MyAgents {
-  my_agent_key Int      @id @default(autoincrement())
-  user_key     Int
-  agent_key    Int
-  level        Int      @default(1)
-  count        Int      @default(1)
-  obtained_at  DateTime
-  class        Int      @default(0)
-  Agents       Agents   @relation(fields: [agent_key], references: [agent_key], onDelete: Cascade)
-  Users        Users    @relation(fields: [user_key], references: [user_key], onDelete: Cascade)
-
-  @@index([agent_key], map: "MyAgents_agent_key_fkey")
-  @@index([user_key], map: "MyAgents_user_key_fkey")
+  @@map("Assets")
 }
 
 model Ranks {
-  rank_key   Int      @id @default(autoincrement())
-  user_key   Int      @unique
-  win_count  Int      @default(0)
-  lose_count Int      @default(0)
-  draw_count Int      @default(0)
-  mmr        Int      @default(5000)
-  updated_at DateTime
-  Users      Users    @relation(fields: [user_key], references: [user_key], onDelete: Cascade)
+  rankKey   Int      @id @default(autoincrement()) @map("rank_key")
+  userKey   Int      @unique @map("user_key")
+  winCount  Int      @default(0) @map("win_count")
+  loseCount Int      @default(0) @map("lose_count")
+  drawCount Int      @default(0) @map("draw_count")
+  mmr       Int      @default(5000) @map("mmr")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+
+  @@map("Ranks")
+}
+
+model Agents {
+  agentKey Int        @id @default(autoincrement()) @map("agent_key")
+  name     String     @map("name")
+  team     String     @map("team")
+  position Pos        @map("position")
+  grade    Grade      @map("grade")
+  myAgent  MyAgents[]
+  stat     Stats?
+
+  @@map("Agents")
 }
 
 model Stats {
-  stat_key  Int    @id @default(autoincrement())
-  agent_key Int    @unique
-  ad        Int    @default(100)
-  ap        Int    @default(100)
-  hp        Int    @default(100)
-  mp        Int    @default(100)
-  def       Int    @default(100)
-  crit      Int    @default(100)
-  Agents    Agents @relation(fields: [agent_key], references: [agent_key], onDelete: Cascade)
+  statKey  Int    @id @default(autoincrement()) @map("stat_key")
+  agentKey Int    @unique @map("agent_key")
+  ad       Int    @default(100) @map("ad")
+  ap       Int    @default(100) @map("ap")
+  hp       Int    @default(100) @map("hp")
+  mp       Int    @default(100) @map("mp")
+  def      Int    @default(100) @map("def")
+  crit     Int    @default(100) @map("crit")
+  agent    Agents @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
+
+  @@map("Stats")
 }
 
-model Users {
-  user_key       Int        @id @default(autoincrement())
-  id             String
-  pw             String
-  nickname       String
-  squad_mem_1    Int        @default(0)
-  squad_mem_2    Int        @default(0)
-  squad_mem_3    Int        @default(0)
-  favorite_agent Int        @default(0)
-  created_at     DateTime   @default(now())
-  Assets         Assets?
-  MyAgents       MyAgents[]
-  Ranks          Ranks?
+model MyAgents {
+  myAgentKey Int      @id @default(autoincrement()) @map("my_agent_key")
+  userKey    Int      @map("user_key")
+  agentKey   Int      @map("agent_key")
+  level      Int      @default(1) @map("level")
+  count      Int      @default(1) @map("count")
+  obtainedAt DateTime @updatedAt @map("obtained_at")
+  class      Int      @default(0) @map("class")
+  name       String
+  agent      Agents   @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
+  user       Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+
+  @@index([agentKey], map: "MyAgents_agent_key_fkey")
+  @@index([userKey], map: "MyAgents_user_key_fkey")
+  @@map("MyAgents")
 }
 
-enum Agents_position {
+enum Pos {
+
   tanker
   warrior
   wizard
 }
 
-enum Agents_grade {
+
+enum Grade {
+
   s
   a
 }
