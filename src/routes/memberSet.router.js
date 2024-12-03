@@ -1,6 +1,6 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js"
-import { strVerification } from "../middlewares/agentVerification.middleware.js"
+import { strVerification } from "../middlewares/agentVerify.middleware.js"
 
 //계정 라우터 생성
 const router = express.Router();
@@ -57,9 +57,9 @@ router.put('/users/:key/formation', strVerification, async (req,res,next) => {
         .status(201)
         .json({ 
             message : "성공적으로 팀이 편성되었습니다.",
-            squd: [`${myAgent[0].name}(${myAgent[0].position})`, 
-                `${myAgent[1].name}(${myAgent[1].position})`,
-                `${myAgent[2].name}(${myAgent[2].position})`],
+            squd: [`${myAgent[0].name}(${agent[0].position})`, 
+                `${myAgent[1].name}(${agent[1].position})`,
+                `${myAgent[2].name}(${agent[2].position})`],
             synergy
         })
 })
