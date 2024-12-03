@@ -7,6 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model Users {
   userKey       Int        @id @default(autoincrement()) @map("user_key")
   id            String     @map("id")
@@ -94,12 +95,15 @@ model MyAgents {
 }
 
 enum Pos {
+
   tanker
   warrior
   wizard
 }
 
+
 enum Grade {
+
   s
   a
 }
