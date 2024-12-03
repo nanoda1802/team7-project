@@ -1,5 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
+import agentRouter from "./routes/agents.router.js"
+import memberSetRouter from "./routes/memberSet.router.js"
 
 /* express 생성 */
 const app = express();
@@ -10,7 +12,7 @@ app.use(express.json()); // 바디 파서
 app.use(cookieParser()); // 쿠키 파서
 
 /* 라우터 경로 배정 */
-app.use("/api", []);
+app.use("/api", [agentRouter, memberSetRouter]);
 
 /* 서버 오픈 알리미 */
 app.listen(PORT, () => {
