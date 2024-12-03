@@ -16,7 +16,7 @@ const SECRET_KEY = process.env.SECRET_KEY || 'custom_secret_key'; //.env에서 �
 // 비밀번호 암호화 (bcrypt 사용)
 // 비번확인은 유효성 검사용, 저장하지않음
 
-// ** 입력값 검증 함수 **
+// ** 입력값 검증 **
 const validateSignUpInput = (id, pw, pwCheck) => {
     // 이메일 형식을 검증하는 정규식
     const idRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -77,68 +77,92 @@ const validateSignUpInput = (id, pw, pwCheck) => {
       // 비밀번호를 암호화(bcrypt 사용)하여 저장.
       const hashedPassword = await bcrypt.hash(pw, 10);
   
-      // 새 사용자 데이터를 데이터베이스에 생성.
-      const user = await prisma.users.create({
+      // ** Prisma 트랜잭션을 사용해 Users, Assets, Ranks 테이블에 데이터 생성 **
+    const result = await prisma.$transaction(async (tx) => {
+      // Users 테이블에 사용자 정보 생성
+      const user = await tx.users.create({
         data: {
           id, // 이메일
           pw: hashedPassword, // 암호화된 비밀번호
           nickname, // 닉네임
         },
       });
-  
-      // 성공 시 사용자 정보를 포함하여 응답 반환.
-      res.status(201).json({
-        message: '회원가입이 완료되었습니다',
-        id: user.id,
-        nickname: user.nickname,
-      });
-    } catch (error) {
-      console.error(error); // 에러를 콘솔에 출력.
-      res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환.
-    }
-  });
-  
-  // ** 로그인 API **
-  router.post('/sign-in', async (req, res) => {
-    const { id, pw } = req.body; // 요청 본문에서 아이디와 비밀번호를 추출.
-  
-    try {
-      // 데이터베이스에서 아이디를 기준으로 사용자 조회.
-      const user = await prisma.users.findFirst({ where: { id } });
-  
-      if (!user) {
-        // 사용자가 존재하지 않을 경우 404 상태 코드와 에러 메시지 반환.
-        return res.status(404).json({ errorMessage: '존재하지 않는 아이디입니다' });
-      }
-  
-      // 입력된 비밀번호와 데이터베이스의 암호화된 비밀번호를 비교.
-      const isPasswordValid = await bcrypt.compare(pw, user.pw);
-  
-      if (!isPasswordValid) {
-        // 비밀번호가 일치하지 않으면 401 상태 코드와 에러 메시지 반환.
-        return res.status(401).json({ errorMessage: '비밀번호가 일치하지 않습니다' });
-      }
-  
-      // 비밀번호가 일치하면 JWT 생성.
-      const token = jwt.sign(
-        {
-          userKey: user.userKey, // JWT 페이로드에 사용자 키 포함.
-          id: user.id, // JWT 페이로드에 이메일 포함.
-          nickname: user.nickname, // JWT 페이로드에 닉네임 포함.
+
+      // Assets 테이블에 사용자와 연관된 자산 데이터 생성
+      await tx.assets.create({
+        data: {
+          userKey: user.userKey, // Users 테이블의 userKey를 참조
         },
-        SECRET_KEY, // 비밀 키를 사용하여 서명.
-        { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정.
-      );
-  
-      // 로그인 성공 메시지와 토큰 반환.
-      res.status(200).json({
-        message: '로그인 되었습니다',
-        token: `Bearer ${token}`, // Bearer 형식의 토큰.
       });
-    } catch (error) {
-      console.error(error); // 에러를 콘솔에 출력.
-      res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환.
+
+      // Ranks 테이블에 사용자와 연관된 랭크 데이터 생성
+      await tx.ranks.create({
+        data: {
+          userKey: user.userKey, // Users 테이블의 userKey를 참조
+        },
+      });
+
+      return user; // 트랜잭션에서 생성된 사용자 데이터 반환
+    });
+
+    // 성공 시 사용자 정보를 포함하여 응답 반환
+    res.status(201).json({
+      message: '회원가입이 완료되었습니다',
+      id: result.id, // 생성된 사용자의 이메일 ID
+      nickname: result.nickname, // 생성된 사용자의 닉네임
+      key: result.userKey, // 생성된 사용자의 고유 키(userKey)
+    });
+  } catch (error) {
+    console.error(error); // 에러를 콘솔에 출력
+    res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
+  }
+});
+
+// ** 로그인 API **
+// 사용자의 로그인 요청을 처리합니다.
+router.post('/sign-in', async (req, res) => {
+  const { id, pw } = req.body; // 요청 본문에서 아이디와 비밀번호를 추출
+
+  try {
+    // 데이터베이스에서 아이디를 기준으로 사용자 조회
+    const user = await prisma.users.findFirst({ where: { id } });
+
+    if (!user) {
+      // 사용자가 존재하지 않을 경우 404 상태 코드와 에러 메시지 반환
+      return res.status(404).json({ errorMessage: '존재하지 않는 아이디입니다' });
     }
-  });
+
+    // 입력된 비밀번호와 데이터베이스의 암호화된 비밀번호를 비교
+    const isPasswordValid = await bcrypt.compare(pw, user.pw);
+
+    if (!isPasswordValid) {
+      // 비밀번호가 일치하지 않으면 401 상태 코드와 에러 메시지 반환
+      return res.status(401).json({ errorMessage: '비밀번호가 일치하지 않습니다' });
+    }
+
+    // 비밀번호가 일치하면 JWT 생성
+    const token = jwt.sign(
+      {
+        userKey: user.userKey, // JWT 페이로드에 사용자 키 포함
+        id: user.id, // JWT 페이로드에 이메일 포함
+        nickname: user.nickname, // JWT 페이로드에 닉네임 포함
+      },
+      SECRET_KEY, // 비밀 키를 사용하여 서명 // 수정???
+      { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정
+    );
+
+    // 성공 시 헤더에 Authorization 토큰 추가
+    res.setHeader('Authorization', `Bearer ${token}`);
+
+    // 로그인 성공 메시지와 사용자 키 반환
+    res.status(200).json({
+      message: '로그인 되었습니다',
+      key: user.userKey, // 로그인된 사용자의 고유 키
+    });
+  } catch (error) {
+    console.error(error); // 에러를 콘솔에 출력
+    res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
+  }
+});
   
   export default router;
