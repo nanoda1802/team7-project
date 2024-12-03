@@ -1,5 +1,5 @@
 import express from "express";
-import cookieParser from "cookie-parser";
+import matchRouter from "./routes/match-router.js";
 
 /* express 생성 */
 const app = express();
@@ -7,10 +7,9 @@ const PORT = 9999; // 미정!!!!
 
 /* Parser */
 app.use(express.json()); // 바디 파서
-app.use(cookieParser()); // 쿠키 파서
 
 /* 라우터 경로 배정 */
-app.use("/api", []);
+app.use("/api", [matchRouter]);
 
 /* 서버 오픈 알리미 */
 app.listen(PORT, () => {

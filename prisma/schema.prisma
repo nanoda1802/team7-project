@@ -103,6 +103,7 @@ model MyAgents {
 	userKey Int @map("user_key")
 	agentKey Int @map("agent_key")
 
+	name String @map("name")
 	level Int @default(1) @map("level")
 	class Int @default(0) @map("class")
 	count Int @default(1) @map("count")
