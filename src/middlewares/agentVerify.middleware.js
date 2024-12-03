@@ -52,7 +52,7 @@ const intVerification = async function (req, res, next) {
         // 입력값 확인
         if (!agentKey || !Number.isInteger(agentKey)) return res
             .status(400)
-            .json({ errorMessage: "선택할 챔피언의 <agent_key>를 입력해주세요" })
+            .json({ errorMessage: "선택할 챔피언의 <agent_key>를 숫자로 입력해주세요" })
 
         const agent = await prisma.agents.findFirst({ where: { agentKey } })
         if (!agent) return res
