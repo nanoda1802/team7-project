@@ -66,12 +66,12 @@ router.get("/agents", async (req, res, next) => {
 });
 
 router.get("/users/agents", async (req, res, next) => {
-  const { user_key } = req.user; //미들웨어에서 받기.
+  const { userKey } = req.user; //미들웨어에서 받기.
   //const { user_key } = req.params;
   //미들웨어 넣기.
 
   const showMyAgents = await prisma.myAgents.findMany({
-    where: { user_key: user_key },
+    where: { userKey: userKey },
     select: {
       name: true,
       team: true,
@@ -85,11 +85,11 @@ router.get("/users/agents", async (req, res, next) => {
 
 router.put("/gacha", async (req, res, next) => {
   const { numberOfGacha } = req.body;
-  const { user_key } = req.user;
+  const { userKey } = req.user;
 
   try {
     const userAssets = await prisma.assets.findUnique({
-      where: { userKey: user_key },
+      where: { userKey: userKey },
     });
 
     const totalCost = numberOfGacha * 1000;
@@ -117,7 +117,7 @@ router.put("/gacha", async (req, res, next) => {
         const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
         countS = 0;
         results.push({ type: "agent", grade: "s", agent: selectedAgent });
-        await updateMyAgents(user_key, selectedAgent.agentKey);
+        await updateMyAgents(userKey, selectedAgent.agentKey , selectedAgent.name);
 
         continue;
        }
@@ -126,7 +126,7 @@ router.put("/gacha", async (req, res, next) => {
         const selectedAgent = getRandomAgent(aAgents);
         countA = 0;
         results.push({ type: "agent", grade: "a", agent: selectedAgent });
-        await updateMyAgents(user_key, selectedAgent.agentKey);
+        await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
 
         continue;
        }
@@ -142,18 +142,18 @@ router.put("/gacha", async (req, res, next) => {
         const selectedAgent = getRandomAgent(aAgents);
         countA = 0;
         results.push({ type: "agent", grade: "a", agent: selectedAgent });
-        await updateMyAgents(user_key, selectedAgent.agentKey);
+        await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
       } else {
 
         const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
         countS = 0;
         results.push({ type: "agent", grade: "s", agent: selectedAgent });
-        await updateMyAgents(user_key, selectedAgent.agentKey);
+        await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
       }
     }
 
     await prisma.assets.update({
-      where: { userKey: user_key },
+      where: { userKey: userKey },
       data: {
         cash: { decrement: totalCost },
         enhancer: { increment: enhancerCount },
@@ -198,7 +198,7 @@ function getRandomAgent(agents, weighting = null) {
 
 }
 
-async function updateMyAgents(userKey, agentKey) {
+async function updateMyAgents(userKey, agentKey, name) {
   await prisma.myAgents.upsert({//뭐 이런 함수가 있지. 이거 데이터가 존재하면 업데이트 없으면 만드는 놀라운 함수.
     where: {
       userKey_agentKey: {
@@ -215,6 +215,7 @@ async function updateMyAgents(userKey, agentKey) {
       count: 1,
       level: 1,
       class: 0,
+      name,
     },
   });
 }
