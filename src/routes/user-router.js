@@ -150,8 +150,6 @@ router.post('/sign-in', async (req, res) => {
     const token = jwt.sign(
       {
         userKey: user.userKey, // JWT 페이로드에 사용자 키 포함
-        id: user.id, // JWT 페이로드에 이메일 포함
-        nickname: user.nickname, // JWT 페이로드에 닉네임 포함
       },
       SECRET_KEY, // 비밀 키를 사용하여 서명
       { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정
