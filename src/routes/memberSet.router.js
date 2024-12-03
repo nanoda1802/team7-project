@@ -63,3 +63,34 @@ router.put('/users/:key/formation', strVerification, async (req,res,next) => {
             synergy
         })
 })
+
+//대표 챔피언 설정 API
+router.patch('/users/:key/favorite', strVerification, async (req,res,next) => {
+    const { agent } = req.body;
+    const { key } = req.params;
+
+    const myAgent = await prisma.myAgents.findFirst({ where: { name: agent } })
+    // 보유 챔피언 확인
+    if (!myAgent) return res
+        .status(400)
+        .json({ errorMessage: `${agent}(은)는 현재 보유한 챔피언이 아닙니다.`})
+
+    // 저장
+    const updateUser = await prisma.users.update({
+        where: { userKey: +key },
+        data: {
+            favoriteAgent: +myAgent.agentKey,
+        }
+    })
+
+    // 반환
+    return res
+        .status(201)
+        .json({
+            message : "대표 챔피언이 변경되었습니다.",
+            favorite: myAgent.name
+        })
+})
+
+//라우터 내보내기
+export default router;
