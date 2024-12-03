@@ -6,10 +6,10 @@ import dotenv from 'dotenv';
 
 //환경 변수 파일(.env)을 로드
 dotenv.config();
+const SECRET_KEY = process.env.SECRET_KEY || 'custom_secret_key'; //.env에서 비밀 키 가져오기
 
 // Express 라우터를 초기화합니다.
 const router = express.Router();
-const SECRET_KEY = process.env.SECRET_KEY || 'custom_secret_key'; //.env에서 비밀 키 가져오기
 
 // 사용자 회원가입
 // 이메일 중복 체크
@@ -73,6 +73,12 @@ const validateSignUpInput = (id, pw, pwCheck) => {
         // 중복된 아이디가 있으면 409 상태 코드와 에러 메시지를 반환.
         return res.status(409).json({ errorMessage: '이미 존재하는 아이디입니다' });
       }
+      
+      // 닉네임 중복 확인
+    const isExistUserByNickname = await prisma.users.findFirst({ where: { nickname } });
+    if (isExistUserByNickname) {
+      return res.status(409).json({ errorMessage: '이미 존재하는 닉네임입니다' });
+    }
   
       // 비밀번호를 암호화(bcrypt 사용)하여 저장.
       const hashedPassword = await bcrypt.hash(pw, 10);
@@ -147,7 +153,7 @@ router.post('/sign-in', async (req, res) => {
         id: user.id, // JWT 페이로드에 이메일 포함
         nickname: user.nickname, // JWT 페이로드에 닉네임 포함
       },
-      SECRET_KEY, // 비밀 키를 사용하여 서명 // 수정???
+      SECRET_KEY, // 비밀 키를 사용하여 서명
       { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정
     );
 
