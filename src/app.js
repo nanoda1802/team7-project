@@ -2,9 +2,8 @@ import express from "express";
 import bodyParser from "body-parser";
 import Agentsrouter from "./routes/agents.router.js";
 import cookieParser from "cookie-parser";
-import agentRouter from "./routes/agents.router.js"
-import memberSetRouter from "./routes/memberSet.router.js"
-
+import agentRouter from "./routes/agents.router.js";
+import memberSetRouter from "./routes/memberSet.router.js";
 
 /* express 생성 */
 const app = express();
