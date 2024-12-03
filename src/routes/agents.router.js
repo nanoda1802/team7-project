@@ -65,34 +65,48 @@ router.get("/agents", async (req, res, next) => {
   }
 });
 
-router.get("/users/agents", async (req, res, next) => {
-  const { userKey } = req.user; //미들웨어에서 받기.
+router.get("/users/:userKey/agents", async (req, res, next) => {
+  const { userKey } = req.params;//미들웨어에서 받기.
   //const { user_key } = req.params;
   //미들웨어 넣기.
 
   const showMyAgents = await prisma.myAgents.findMany({
-    where: { userKey: userKey },
+    where: { userKey: +userKey },
     select: {
       name: true,
-      team: true,
-      position: true,
-      grade: true,
+      class: true,
+      level: true,
+      count: true,
     },
   });
 
   return res.status(200).json({ data: showMyAgents });
 });
 
-router.put("/gacha", async (req, res, next) => {
+
+//1. 복합키가 필요한데 프리즈마 수정하기 귀찮아서 그냥 나눠서 함. 다음에 만든다면 이런상황을 예상해서 해보기.
+//2. 할건 마일리지, 한번에 하는 트렌지션, 10번하면 세일하게 하는거. 
+//3. 유저키 만약 숫자로 받는다면 이제 밑에 +해준거 다 빼기
+//4. 카운터가 무한으로 증식해 버리네. 근데 왜 s가 안뽑혔지. 
+router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
   const { numberOfGacha } = req.body;
-  const { userKey } = req.user;
+  const { userKey } = req.params;
 
   try {
     const userAssets = await prisma.assets.findUnique({
-      where: { userKey: userKey },
+      where: { userKey: +userKey },
     });
+    
+    let totalCost= 0; 
+    let totalmileage= 0;
+    if (numberOfGacha>=10){
+      totalCost = numberOfGacha * 900;
+      totalmileage =  numberOfGacha * 9;
+    }else {
+       totalCost = numberOfGacha * 1000;
+       totalmileage =  numberOfGacha * 10;
+      }
 
-    const totalCost = numberOfGacha * 1000;
     if (userAssets.cash < totalCost) {
       return res.status(400).json({ error: "캐시가 부족합니다." });
     }
@@ -108,15 +122,19 @@ router.put("/gacha", async (req, res, next) => {
     const aAgents = agents.filter((agent) => agent.grade === "a");
     const sAgents = agents.filter((agent) => agent.grade === "s");
 
+
+    console.log(userAssets);
+
     let enhancerCount = 0;
     let countA = userAssets.countA;
     let countS = userAssets.countS;
+    const results = [];
 
     for (let i = 0; i < numberOfGacha; i++) {
        if (countS === 50){
         const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
         countS = 0;
-        results.push({ type: "agent", grade: "s", agent: selectedAgent });
+        results.push({agent: selectedAgent });
         await updateMyAgents(userKey, selectedAgent.agentKey , selectedAgent.name);
 
         continue;
@@ -125,8 +143,8 @@ router.put("/gacha", async (req, res, next) => {
        if(countA===5){
         const selectedAgent = getRandomAgent(aAgents);
         countA = 0;
-        results.push({ type: "agent", grade: "a", agent: selectedAgent });
-        await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
+        results.push({agent: selectedAgent });
+        await updateMyAgents(userKey, selectedAgent.agentKey , selectedAgent.name);
 
         continue;
        }
@@ -137,28 +155,32 @@ router.put("/gacha", async (req, res, next) => {
         enhancerCount++;
         countA++;
         countS++;
+        results.push({ type: "enhancer" });
       } else if (random <= 0.94) {
 
         const selectedAgent = getRandomAgent(aAgents);
         countA = 0;
-        results.push({ type: "agent", grade: "a", agent: selectedAgent });
+        countS++;
+        results.push({agent: selectedAgent });
         await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
       } else {
 
         const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
         countS = 0;
-        results.push({ type: "agent", grade: "s", agent: selectedAgent });
+        countA++;
+        results.push({agent: selectedAgent });
         await updateMyAgents(userKey, selectedAgent.agentKey, selectedAgent.name);
       }
     }
 
     await prisma.assets.update({
-      where: { userKey: userKey },
+      where: { userKey: +userKey },
       data: {
         cash: { decrement: totalCost },
         enhancer: { increment: enhancerCount },
-        countA: { increment: countA },
-        countS: { increment: countS },
+        countA: countA ,
+        countS: countS ,
+        mileage: { increment: totalmileage },
       },
     });
 
@@ -199,25 +221,32 @@ function getRandomAgent(agents, weighting = null) {
 }
 
 async function updateMyAgents(userKey, agentKey, name) {
-  await prisma.myAgents.upsert({//뭐 이런 함수가 있지. 이거 데이터가 존재하면 업데이트 없으면 만드는 놀라운 함수.
+  const existingAgent = await prisma.myAgents.findFirst({
     where: {
-      userKey_agentKey: {
-        userKey,
-        agentKey,
-      },
-    },
-    update: {
-      count: { increment: 1 },
-    },
-    create: {
-      userKey,
+      userKey:+userKey,
       agentKey,
-      count: 1,
-      level: 1,
-      class: 0,
-      name,
     },
   });
+
+  if (existingAgent) {
+    await prisma.myAgents.update({
+      where: { myAgentKey: existingAgent.myAgentKey },
+      data: {
+        count: { increment: 1 },
+      },
+    });
+  } else {
+    await prisma.myAgents.create({
+      data: {
+        userKey:+userKey,
+        agentKey,
+        count: 1,
+        level: 1,
+        class: 0,
+        name,
+      },
+    });
+  }
 }
 
 
