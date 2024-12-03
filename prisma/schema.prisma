@@ -36,6 +36,7 @@ model MyAgents {
   count        Int      @default(1)
   obtained_at  DateTime
   class        Int      @default(0)
+  name         String
   Agents       Agents   @relation(fields: [agent_key], references: [agent_key], onDelete: Cascade)
   Users        Users    @relation(fields: [user_key], references: [user_key], onDelete: Cascade)
 
