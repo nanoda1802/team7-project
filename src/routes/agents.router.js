@@ -84,7 +84,7 @@ router.get("/users/agents", async (req, res, next) => {
 });
 
 router.put("/gacha", async (req, res, next) => {
-  const { numberOfGacha, agentKey } = req.body;
+  const { numberOfGacha } = req.body;
   const { user_key } = req.user;
 
   try {
@@ -109,35 +109,115 @@ router.put("/gacha", async (req, res, next) => {
     const sAgents = agents.filter((agent) => agent.grade === "s");
 
     let enhancerCount = 0;
-    let countA = 0;
-    let countS = 0;
+    let countA = userAssets.countA;
+    let countS = userAssets.countS;
 
     for (let i = 0; i < numberOfGacha; i++) {
-      const random = Math.random();
+       if (countS === 50){
+        const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
+        countS = 0;
+        results.push({ type: "agent", grade: "s", agent: selectedAgent });
+        await updateMyAgents(user_key, selectedAgent.agentKey);
 
+        continue;
+       }
+       
+       if(countA===5){
+        const selectedAgent = getRandomAgent(aAgents);
+        countA = 0;
+        results.push({ type: "agent", grade: "a", agent: selectedAgent });
+        await updateMyAgents(user_key, selectedAgent.agentKey);
+
+        continue;
+       }
+
+      const random = Math.random();
       if (random <= 0.7) {
         // 70% 확률: 강화재료
         enhancerCount++;
         countA++;
         countS++;
       } else if (random <= 0.94) {
-        // 24% 확률: A급 에이전트
 
+        const selectedAgent = getRandomAgent(aAgents);
         countA = 0;
-
+        results.push({ type: "agent", grade: "a", agent: selectedAgent });
         await updateMyAgents(user_key, selectedAgent.agentKey);
       } else {
-        // 6% 확률: S급 에이전트
 
+        const selectedAgent = getRandomAgent(sAgents, agentKey => agentKey === req.body.agentKey ?  (1/3): (2/45));
         countS = 0;
-
+        results.push({ type: "agent", grade: "s", agent: selectedAgent });
         await updateMyAgents(user_key, selectedAgent.agentKey);
       }
     }
+
+    await prisma.assets.update({
+      where: { userKey: user_key },
+      data: {
+        cash: { decrement: totalCost },
+        enhancer: { increment: enhancerCount },
+        countA: { increment: countA },
+        countS: { increment: countS },
+      },
+    });
+
+
+
+    return res.status(200).json({
+      message: "갸챠 결과",
+      results,
+    });
+
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "서버 오류" });
   }
 });
+
+
+function getRandomAgent(agents, weighting = null) {
+  if (!weighting) {
+    // 기본 균등 확률
+    return agents[Math.floor(Math.random() * agents.length)];
+  }
+  const weights = agents.map(agent => weighting(agent.agentKey));//가중치 반환. [1/3, 2/45,...]
+  const totalWeight = weights.reduce((acc, w) => acc + w, 0);
+  const random = Math.random() * totalWeight;
+
+  let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
+  for (let i = 0; i < agents.length; i++) {
+    cumulative += weights[i]; //가중치를 모은다.
+    if (random <= cumulative) {// 가중치가 랜덤에 걸렸을때.
+      return agents[i];//그 가중치의 선수.
+    }
+  }
+
+  return agents[agents.length - 1];//이건 만약 오류나면 그냥 마지막꺼 내놓음.
+
+
+}
+
+async function updateMyAgents(userKey, agentKey) {
+  await prisma.myAgents.upsert({//뭐 이런 함수가 있지. 이거 데이터가 존재하면 업데이트 없으면 만드는 놀라운 함수.
+    where: {
+      userKey_agentKey: {
+        userKey,
+        agentKey,
+      },
+    },
+    update: {
+      count: { increment: 1 },
+    },
+    create: {
+      userKey,
+      agentKey,
+      count: 1,
+      level: 1,
+      class: 0,
+    },
+  });
+}
+
 
 export default router;
