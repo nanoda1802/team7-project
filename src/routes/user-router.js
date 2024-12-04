@@ -170,35 +170,38 @@ router.patch("/users/:key/cash", authMiddleware,async (req, res, next) => {
 
 // 보유 재화 조회
 router.get("/users/:key/assets", authMiddleware, async (req, res, naxt) => {
-  const { key } = req.params; // 매개변수에서 key 추출
   try {
-    const currentCash = await prisma.assets.findFirst({
+    const { key } = req.params; // 매개변수에서 key 추출
+    const assets = await prisma.assets.findFirst({
       where: { userKey: +key }, // key를 숫자로 변환
       select: {
         cash: true,
-      },
-    });
-    const currentMileage = await prisma.assets.findFirst({
-      where: { userKey: +key },
-      select: {
         mileage: true,
+        enhancer: true
       },
     });
-    const currentEnhancer = await prisma.assets.findFirst({
-      where: { userKey: +key },
-      select: {
-        enhancer: true,
-      },
-    });
+
+    if (!assets) return res
+      .status(404)
+      .json({errorMessage: "보유한 재화가 없습니다."})
+
     const data = {
-      cash: currentCash?.cash || 0,
-      mileage: currentMileage?.mileage || 0,
-      enhancer: currentEnhancer?.enhancer || 0,
+      cash: assets.cash,
+      mileage: assets.mileage,
+      enhancer: assets.enhancer,
     };
-    return res.status(200).json({ message: "데이터 추출에 성공하셨습니다!", data });
+
+    return res
+      .status(200)
+      .json({ 
+        message: "보유 재화 조회 성공!"
+        , data 
+      });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: "캐시 조회 중 오류가 발생했습니다." });
+    return res
+      .status(500)
+      .json({ message: "캐시 조회 중 오류가 발생했습니다." });
   }
 });
   export default router;
