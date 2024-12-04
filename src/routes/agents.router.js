@@ -77,6 +77,13 @@ router.get("/users/:userKey/agents", async (req, res, next) => {
       class: true,
       level: true,
       count: true,
+      Agents:{
+        select: {
+         team: true,    
+         position: true,
+         grade: true,
+        },
+      },
     },
   });
 
