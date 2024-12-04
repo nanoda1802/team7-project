@@ -10,7 +10,12 @@ import userRouter from "./routes/user-router.js";
 const app = express();
 const PORT = 9999; // 미정!!!!
 
+
+const publicPath = path.join(process.cwd(), 'assets');
+app.use(express.static(publicPath));
+
 /* Parser */
+app.use(cors());
 app.use(express.json()); // 바디 파서
 app.use(bodyParser.urlencoded({ extended: true }));
 

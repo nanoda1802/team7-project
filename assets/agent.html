@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캐릭터 조회</title>
+    <link rel="stylesheet" href="agentstyles.css">
+</head>
+<body>
+    <h1>캐릭터 조회</h1>
+
+    <!-- 첫 번째 입력값: showHow -->
+    <label for="showHow">분류 기준 (showHow):</label>
+    <select id="showHow">
+        <option value="team">팀</option>
+        <option value="position">포지션</option>
+        <option value="grade">등급</option>
+    </select>
+    <br><br>
+
+    <!-- 두 번째 입력값: showWhat -->
+    <label for="showWhat">값 (showWhat):</label>
+    <select id="showWhat">
+      <!-- 선택지는 JavaScript로 동적으로 변경됨 -->
+    </select>
+    <br><br>
+
+    <!-- 세 번째 입력값: orderBy -->
+    <label for="orderBy">정렬 기준 (orderBy):</label>
+    <select id="orderBy">
+        <option value="name">이름</option>
+        <option value="position">포지션</option>
+        <option value="grade">등급</option>
+        <option value="team">팀</option>
+    </select>
+    <br><br>
+
+    <!-- 네 번째 입력값: orderHow -->
+    <label for="orderHow">정렬 방향 (orderHow):</label>
+    <select id="orderHow">
+        <option value="asc">오름차순</option>
+        <option value="desc">내림차순</option>
+    </select>
+    <br><br>
+
+    <!-- 확인 버튼 -->
+    <button id="confirmBtn">조회</button>
+
+    <!-- 결과 표시 영역 -->
+    <div class="container">
+      <div class="card-grid" id="card-container">
+        <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
+      </div>
+      <div class="resources">
+        보유 재화: 1,000 골드
+      </div>
+  </div>
+
+  <script src="agentscript.js"></script>
+</body>
+</html>
