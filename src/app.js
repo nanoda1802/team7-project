@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
 import agentsrouter from "./routes/agents.router.js";
-import memberSetRouter from "./routes/memberSet.router.js"
 import path from "path";
 import cors from 'cors';
 
