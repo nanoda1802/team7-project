@@ -3,6 +3,7 @@ import {prisma} from '../utils/prisma/index.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
+import authMiddleware from '../middlewares/auth-middleware.js';
 
 //환경 변수 파일(.env)을 로드
 dotenv.config();
@@ -144,16 +145,10 @@ router.post('/sign-in', async (req, res) => {
 });
   
 // cash 충전 
-router.patch("/users/:key/cash", async (req, res, next) => {
+router.patch("/users/:key/cash", authMiddleware,async (req, res, next) => {
   // 변수 선언
   const { key } = req.params;
-  const loggedlnUser = req.user;
-  if (!loggedlnUser) {
-    return res.status(401).json({ message: "로그인부터 해주세요" });
-  }
-  if (loggedlnUser.userKey !== +key) {
-    return res.status(401).json({ message: "당신 계정이 아닙니다." });
-  }
+
   try {
     await prisma.assets.update({
       where: { userKey: +key },
@@ -162,15 +157,19 @@ router.patch("/users/:key/cash", async (req, res, next) => {
         mileage: { increment: 100 },
       },
     });
-    return res.status(200).json({ message: `100000만큼 충전되었습니다.` });
+    return res
+      .status(200)
+      .json({ message: `100000만큼 충전되었습니다.` });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+    return res
+      .status(500)
+      .json({ message: "서버 오류가 발생했습니다" });
   }
 });
 
 // 보유 재화 조회
-router.get("/users/:key/assets", async (req, res, naxt) => {
+router.get("/users/:key/assets", authMiddleware, async (req, res, naxt) => {
   const { key } = req.params; // 매개변수에서 key 추출
   try {
     const currentCash = await prisma.assets.findFirst({
