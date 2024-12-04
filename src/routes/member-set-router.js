@@ -24,6 +24,9 @@ router.put('/users/:key/formation', champVerification, async (req,res,next) => {
         if (agent[i].position === "tanker") {
             tank = true;
         }
+        if (myAgent.includes(myAgent[i])) return res
+            .status(400)
+            .json({ errorMessage: "동일 챔피언은 동시에 배치할 수 없습니다." })
     }
     // 탱커 여부 확인
     if (!tank) return res
@@ -35,22 +38,23 @@ router.put('/users/:key/formation', champVerification, async (req,res,next) => {
         .status(400)
         .json({ errorMessage: "팀편성에는 3명의 챔피언이 필요합니다" })
 
+    //시너지 확인
+    const synergy = [...new Set(agent.map(e => e.team).filter((e, idx, arr) => {
+        if (idx !== arr.indexOf(e) && arr.indexOf(e) !== -1)
+            return true
+        else return false
+    }))].join("") || "none"
+
     // 저장
     const updateUser = await prisma.users.update({
         where: { userKey: +key },
         data: {
             squadMem1: +myAgent[0].agentKey,
             squadMem2: +myAgent[1].agentKey,
-            squadMem3: +myAgent[2].agentKey
+            squadMem3: +myAgent[2].agentKey,
+            synergy
         }
     })
-
-    //시너지 확인
-    const synergy = [...new Set(agent.map(e => e.team).filter((e,idx,arr) =>{ 
-        if (idx !== arr.indexOf(e) && arr.indexOf(e) !== -1)
-            return true
-        else return false
-    }))].join("") || "none"
 
     // 반환
     return res

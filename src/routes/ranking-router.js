@@ -9,11 +9,11 @@ router.get('/users/ranks',  async (req, res, next) => {
     let resJson = [];
 
     const ranking = await prisma.ranks.findMany({
-
-        orderBy: {
+        orderBy: [{
             mmr: 'desc',
+        },{
             loseCount: 'asc'
-        },
+        }],
         select: {
             userKey: true,
             winCount: true,
