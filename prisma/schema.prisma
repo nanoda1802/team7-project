@@ -8,98 +8,102 @@ datasource db {
 }
 
 model Users {
-  userKey       Int        @id @default(autoincrement()) @map("user_key")
-  id            String     @map("id")
-  pw            String     @map("pw")
-  nickname      String     @map("nickname")
-  squadMem1     Int        @default(0) @map("squad_mem_1")
-  squadMem2     Int        @default(0) @map("squad_mem_2")
-  squadMem3     Int        @default(0) @map("squad_mem_3")
-  favoriteAgent Int        @default(0) @map("favorite_agent")
-  createdAt     DateTime   @default(now()) @map("created_at")
-  asset         Assets?
-  myAgent       MyAgents[]
-  rank          Ranks?
+	userKey Int @id @default(autoincrement()) @map("user_key")
 
-  @@map("Users")
+	id String @map("id")
+	pw String @map("pw")
+	nickname String @map("nickname") 
+	squadMem1 Int @default(0) @map("squad_mem_1")
+	squadMem2 Int @default(0) @map("squad_mem_2")
+	squadMem3 Int @default(0) @map("squad_mem_3")
+	favoriteAgent Int @default(0) @map("favorite_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+	asset Assets?
+	rank Ranks?
+  myAgent MyAgents[]
+	@@map("Users")
 }
 
 model Assets {
-  assetKey Int   @id @default(autoincrement()) @map("asset_key")
-  userKey  Int   @unique @map("user_key")
-  cash     Int   @default(100000) @map("cash")
-  mileage  Int   @default(0) @map("mileage")
-  enhancer Int   @default(10) @map("enhancer")
-  countA   Int   @default(0) @map("count_A")
-  countS   Int   @default(0) @map("count_S")
-  user     Users @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+	assetKey Int @id @default(autoincrement()) @map("asset_key")
+	userKey Int @unique @map("user_key")
 
-  @@map("Assets")
+	cash Int @default(100000) @map("cash")
+	mileage Int @default(0) @map("mileage")
+	enhancer Int @default(10) @map("enhancer")
+  countA Int @default(0) @map("count_A")
+  countS Int @default(0) @map("count_S")
+
+	user Users @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+	@@map("Assets")
 }
 
 model Ranks {
-  rankKey   Int      @id @default(autoincrement()) @map("rank_key")
-  userKey   Int      @unique @map("user_key")
-  winCount  Int      @default(0) @map("win_count")
-  loseCount Int      @default(0) @map("lose_count")
-  drawCount Int      @default(0) @map("draw_count")
-  mmr       Int      @default(5000) @map("mmr")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  user      Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+	rankKey Int @id @default(autoincrement()) @map("rank_key")
+	userKey Int @unique @map("user_key")
 
-  @@map("Ranks")
+	winCount Int @default(0) @map("win_count")
+	loseCount Int @default(0) @map("lose_count")
+	drawCount Int @default(0) @map("draw_count")
+	mmr Int @default(5000) @map("mmr")
+	updatedAt DateTime @updatedAt @map("updated_at")
+
+	user Users @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
+	@@map("Ranks")
 }
 
 model Agents {
-  agentKey Int        @id @default(autoincrement()) @map("agent_key")
-  name     String     @map("name")
-  team     String     @map("team")
-  position Pos        @map("position")
-  grade    Grade      @map("grade")
-  myAgent  MyAgents[]
-  stat     Stats?
+	agentKey Int @id @default(autoincrement()) @map("agent_key")
 
-  @@map("Agents")
-}
+	name String @map("name")
+	team String @map("team")
+	position Pos @map("position")
+	grade Grade @map("grade")
 
-model Stats {
-  statKey  Int    @id @default(autoincrement()) @map("stat_key")
-  agentKey Int    @unique @map("agent_key")
-  ad       Int    @default(100) @map("ad")
-  ap       Int    @default(100) @map("ap")
-  hp       Int    @default(100) @map("hp")
-  mp       Int    @default(100) @map("mp")
-  def      Int    @default(100) @map("def")
-  crit     Int    @default(100) @map("crit")
-  agent    Agents @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
-
-  @@map("Stats")
-}
-
-model MyAgents {
-  myAgentKey Int      @id @default(autoincrement()) @map("my_agent_key")
-  userKey    Int      @map("user_key")
-  agentKey   Int      @map("agent_key")
-  level      Int      @default(1) @map("level")
-  count      Int      @default(1) @map("count")
-  obtainedAt DateTime @updatedAt @map("obtained_at")
-  class      Int      @default(0) @map("class")
-  name       String
-  agent      Agents   @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
-  user       Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
-
-  @@index([agentKey], map: "MyAgents_agent_key_fkey")
-  @@index([userKey], map: "MyAgents_user_key_fkey")
-  @@map("MyAgents")
+	stat Stats?
+  myAgent MyAgents[]
+	@@map("Agents")
 }
 
 enum Pos {
-  tanker
-  warrior
-  wizard
+	tanker
+	warrior
+	wizard
 }
 
 enum Grade {
-  s
-  a
+	s
+	a
+}
+
+model Stats {
+	statKey Int @id @default(autoincrement()) @map("stat_key")
+	agentKey Int @unique @map("agent_key")
+
+	ad Int @default(100) @map("ad")
+	ap Int @default(100) @map("ap")
+	hp Int @default(100) @map("hp")
+	mp Int @default(100) @map("mp")
+	def Int @default(100) @map("def")
+	crit Int @default(100) @map("crit")
+
+	agent Agents @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
+	@@map("Stats")
+}
+
+model MyAgents {
+	myAgentKey Int @id @default(autoincrement()) @map("my_agent_key")
+	userKey Int @map("user_key")
+	agentKey Int @map("agent_key")
+
+	name String @map("name")
+	level Int @default(1) @map("level")
+	class Int @default(0) @map("class")
+	count Int @default(1) @map("count")
+	obtainedAt DateTime @updatedAt @map("obtained_at")
+
+	user Users @relation(fields: [userKey],references: [userKey], onDelete: Cascade)
+	agent Agents @relation(fields: [agentKey],references: [agentKey], onDelete: Cascade)
+	@@map("MyAgents")
 }
