@@ -15,31 +15,36 @@ if (!SECRET_KEY) {
 // 인증 미들웨어
 const authMiddleware = async (req, res, next) => {
   try {
+    const {key} = req.params;
+
     // 요청 Authorization 값 확인
     const { authorization } = req.headers;
-
     // "Bearer" 이후의 토큰 부분만 추출
     const [tokenType, token] = authorization.split(' ');
 
     // token이 비어있거나(없는 경우) tockenType이 Bearer가 아닌경우
-    if (!token || tokenType !== 'Bearer') {
-      return res.status(401).json({ message: '인증 토큰이 제공되지 않았습니다.' });
-    }
-
+    if (!token || tokenType !== 'Bearer') return res
+      .status(401)
+      .json({ errorMessage: '로그인부터 해주세요' });
     // 토큰 검증
     const decoded = jwt.verify(token, SECRET_KEY);
 
+    // params로 받은 user 확인
+    const urlUser = await prisma.users.findUnique({ where: { userKey: +key } });    
     //JWT 토큰에서 가져온 사용자 정보를 이용해서 데이터베이스에서 해당 사용자가 실제로 존재하는지 확인하는 작업
-    const user = await prisma.users.findUnique({ where: { userKey: decoded.userKey } });
-
+    const loginUser = await prisma.users.findUnique({ where: { userKey: decoded.userKey } });
     // 사용자 정보가 데이터베이스에 없는 경우
-    if (!user) {
-      return res.status(401).json({ message: '유효하지 않은 사용자입니다.' });
-    }
+    if (!urlUser || !loginUser) return res
+      .status(401)
+      .json({ errorMessage: "해당하는 계정이 존재하지 않습니다" });
+
+    // 계정 주인 확인
+    if (urlUser !== loginUser) return res
+      .status(401)
+      .json({ errorMessage: "당신의 계정이 아닙니다." });
 
     // 사용자 정보를 req 객체에 추가
-    req.user = user;
-
+    req.user = loginUser;
     // 다음 미들웨어로 이동
     next();
   } catch (error) {
@@ -52,7 +57,9 @@ const authMiddleware = async (req, res, next) => {
       : '토큰 검증 실패'; // 일반 검증 실패 메시지
 
     // 검증 실패 응답
-    return res.status(401).json({ message: errorMessage, error: error.message });
+    return res
+      .status(401)
+      .json({ message: errorMessage, error: error.message });
   }
 };
 
