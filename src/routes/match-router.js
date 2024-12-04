@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import champVerification from "../middlewares/agent-verify-middleware.js"
 
 /* 계정 라우터 생성 */
 const router = express.Router();

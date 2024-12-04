@@ -5,13 +5,6 @@ import dotenv from 'dotenv';
 // 환경 변수 설정
 dotenv.config();
 
-const SECRET_KEY = process.env.SECRET_KEY; // .env 파일에서 SECRET_KEY 가져오기
-
-// SECRET_KEY가 설정되지 않은 경우 애플리케이션 실행 차단
-if (!SECRET_KEY) {
-  throw new Error('환경 변수 SECRET_KEY가 설정되지 않았습니다.');
-}
-
 // 인증 미들웨어
 const authMiddleware = async (req, res, next) => {
   try {
@@ -22,12 +15,12 @@ const authMiddleware = async (req, res, next) => {
     // "Bearer" 이후의 토큰 부분만 추출
     const [tokenType, token] = authorization.split(' ');
 
-    // token이 비어있거나(없는 경우) tockenType이 Bearer가 아닌경우
+    // token이 비어있거나(없는 경우) tokenType이 Bearer가 아닌경우
     if (!token || tokenType !== 'Bearer') return res
       .status(401)
       .json({ errorMessage: '로그인부터 해주세요' });
     // 토큰 검증
-    const decoded = jwt.verify(token, SECRET_KEY);
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
     // params로 받은 user 확인
     const urlUser = await prisma.users.findUnique({ where: { userKey: +key } });    
