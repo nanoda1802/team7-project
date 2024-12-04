@@ -1,6 +1,8 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import authMiddleware from '../middlewares/auth-middleware.js';
 import champVerification from "../middlewares/agent-verify-middleware.js"
+import { check } from "prisma";
 
 /* 계정 라우터 생성 */
 const router = express.Router();
@@ -273,7 +275,7 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
     if (agent[i].position === "tanker") {
       tank = true;
     }
-    if (myAgent.includes(myAgent[i])) return res
+    if (myAgent.indexOf(myAgent[i]) !== i) return res
       .status(400)
       .json({ errorMessage: "동일 챔피언은 동시에 배치할 수 없습니다." })
   }

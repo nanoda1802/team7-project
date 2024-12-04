@@ -74,6 +74,7 @@ router.get("/users/:key/agents", async (req, res, next) => {
   const showMyAgents = await prisma.myAgents.findMany({
     where: { userKey: +key },
     select: {
+      agentKey: true,
       name: true,
       class: true,
       level: true,
