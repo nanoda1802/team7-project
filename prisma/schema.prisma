@@ -8,22 +8,21 @@ datasource db {
 }
 
 model Users {
-	userKey Int @id @default(autoincrement()) @map("user_key")
+  userKey       Int        @id @default(autoincrement()) @map("user_key")
+  id            String     @unique @map("id")
+  pw            String     @map("pw")
+  nickname      String     @unique @map("nickname")
+  squadMem1     Int        @default(0) @map("squad_mem_1")
+  squadMem2     Int        @default(0) @map("squad_mem_2")
+  squadMem3     Int        @default(0) @map("squad_mem_3")
+  favoriteAgent Int        @default(0) @map("favorite_agent")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  synergy       String     @default("none") @map("synergy")
+  asset         Assets?
+  myAgent       MyAgents[]
+  rank          Ranks?
 
-	id String @unique @map("id")
-	pw String @map("pw")
-	nickname String @unique @map("nickname") 
-	squadMem1 Int @default(0) @map("squad_mem_1")
-	squadMem2 Int @default(0) @map("squad_mem_2")
-	squadMem3 Int @default(0) @map("squad_mem_3")
-	synergy String @default("none") @map("synergy")
-	favoriteAgent Int @default(0) @map("favorite_agent")
-  createdAt DateTime @default(now()) @map("created_at")
-
-	asset Assets?
-	rank Ranks?
-  myAgent MyAgents[]
-	@@map("Users")
+  @@map("Users")
 }
 
 model Assets {
@@ -82,11 +81,11 @@ model MyAgents {
   myAgentKey Int      @id @default(autoincrement()) @map("my_agent_key")
   userKey    Int      @map("user_key")
   agentKey   Int      @map("agent_key")
+  name       String   @map("name")
   level      Int      @default(1) @map("level")
+  class      Int      @default(0) @map("class")
   count      Int      @default(1) @map("count")
   obtainedAt DateTime @updatedAt @map("obtained_at")
-  class      Int      @default(0) @map("class")
-  name       String   @map("name")
   agent      Agents   @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
   user       Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
 
