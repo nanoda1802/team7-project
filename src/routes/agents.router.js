@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 
 const router = express.Router();
 
-router.get("/agents", async (req, res, next) => {
+router.post("/agents", async (req, res, next) => {
   const { option } = req.body;
   const [showHow, showWhat, orderBy, orderHow] = option.split(",");
 

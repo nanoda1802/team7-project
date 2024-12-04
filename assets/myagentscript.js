@@ -24,10 +24,10 @@ async function loadAgents() {
         card.innerHTML = `
           <div class="card-header">${agent.name}</div>
           <div class="card-body">
-            <span>${agent.class}</span>
+            <span>${agent.agent.grade}</span>
           </div>
           <div class="card-footer">
-            <div class="stars">${'★'.repeat(agent.agent.grade)}</div>
+            <div class="stars">${'★'.repeat(agent.class)}</div>
             <div class="position">포지션: ${agent.agent.position}</div>
           </div>
         `;
