@@ -15,16 +15,16 @@ if (!SECRET_KEY) {
 // 인증 미들웨어
 const authMiddleware = async (req, res, next) => {
   try {
-    // 요청 헤더에서 Authorization 값 확인
-    const authHeader = req.headers.authorization;
-
-    // Authorization 헤더가 없거나 형식이 잘못된 경우 //startsWith 왜 나왔냐..?...
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: '인증 토큰이 제공되지 않았습니다.' });
-    }
+    // 요청 Authorization 값 확인
+    const { authorization } = req.headers;
 
     // "Bearer" 이후의 토큰 부분만 추출
     const [tokenType, token] = authorization.split(' ');
+
+    // token이 비어있거나(없는 경우) tockenType이 Bearer가 아닌경우
+    if (!token || tokenType !== 'Bearer') {
+      return res.status(401).json({ message: '인증 토큰이 제공되지 않았습니다.' });
+    }
 
     // 토큰 검증
     const decoded = jwt.verify(token, SECRET_KEY);
