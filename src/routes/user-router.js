@@ -155,8 +155,8 @@ router.post('/sign-in', async (req, res) => {
       { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정
     );
 
-    // 성공 시 헤더에 Authorization 토큰 추가
-    res.setHeader('Authorization', `Bearer ${token}`);
+    // 성공 시 헤더에 authorization 토큰 추가
+    res.setHeader('authorization', `Bearer ${token}`);
 
     // 로그인 성공 메시지와 사용자 키 반환
     res.status(200).json({

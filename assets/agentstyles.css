@@ -1,0 +1,87 @@
+.card-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: #f4f4f9; /* 로그인 페이지 배경색과 일치 */
+  }
+
+  /* 카드 레이아웃 */
+  .card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 120px;
+    height: 180px;
+    border: 2px solid #adb5bd;
+    border-radius: 10px;
+    background-color: #ffffff; /* 흰색 배경 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+    padding: 10px;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px); /* hover 시 위로 살짝 올라감 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 카드 상단 */
+  .card-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #212529;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  /* 카드 본문 */
+  .card-body {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: #495057;
+  }
+
+  /* 카드 하단 */
+  .card-footer {
+    font-size: 12px;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  .stars {
+    color: #ffc107; /* 별 색상 */
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .position {
+    font-size: 12px;
+    color: #6c757d; /* 포지션 색상 */
+  }
+
+  /* 재화 표시 */
+  .resources {
+    width: 90%;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    color: #343a40;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: "Noto Sans KR", sans-serif;
+  }
