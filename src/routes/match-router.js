@@ -8,57 +8,56 @@ import { check } from "prisma";
 const router = express.Router();
 
 /* 스쿼드 종합 점수 계산 */
-const checkSquadScore = async (key) => {
-  // [1] 스쿼드 구성 멤버 확인
-  const checkSquad = await prisma.users.findFirst({
-    where: { userKey: key },
-    select: { squadMem1: true, squadMem2: true, squadMem3: true, synergy: true },
-  });
-  const memKeys = Object.values(checkSquad); // 구성 멤버의 agentKey만 담은 배열!!
+const checkSquadScore = async (user) => {
   let squadScore = 0;
+  // [1] 스쿼드 구성 멤버 확인
+  const { squadMem1, squadMem2, squadMem3, synergy } = user
+  const checkSquad = [ squadMem1, squadMem2, squadMem3] 
+
   // [2] 구성 멤버 스탯에 강화 및 돌파 수치 적용
-  for (let memKey of memKeys) {
+  for (const memKey of checkSquad) {
     // [2-1] 구성 멤버 스탯 수령
-    let status = await prisma.stats.findFirst({
-      where: { agentKey: memKey },
-      select: { ad: true, ap: true, hp: true, mp: true, def: true, crit: true },
-    });
     // [2-2] 강화 수치와 돌파 수치와 포지션 확인
-    let { level, class: star } = await prisma.myAgents.findFirst({
-      where: { userKey: key, agentKey: memKey },
-      select: { level: true, class: true },
-    });
-    let { position } = await prisma.agents.findFirst({
+    const agents = await prisma.agents.findFirst({
       where: { agentKey: memKey },
-      select: { position: true },
-    });
-    // [2-3] 수치에 맞게 능력치 변동 적용
-    for (let stat in status) {
-      // [2-3a] 전 스탯에 강화 수치 적용
-      status[stat] *= 1 + level * 0.02;
-      // [2-3b] 특화 스탯에 돌파 수치 적용
-      switch (stat) {
-        case "ad":
-          position === "warrior" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
-        case "ap":
-          position === "wizard" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
-        case "hp":
-          position === "tanker" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
-        case "mp":
-          position === "wizard" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
-        case "def":
-          position === "tanker" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
-        case "crit":
-          position === "warrior" ? (status[stat] *= 1 + star * 0.1) : status[stat];
-          break;
+      select: { 
+        position: true, 
+        stat: {
+          select: {
+            ad: true,
+            ap: true,
+            hp: true,
+            mp: true,
+            def: true,
+            crit: true,
+          }
+        },
+        myAgent: {
+          where: { userKey: user.userKey },
+          select: {
+            level: true,
+            class: true
+          }
+        }
       }
-      squadScore += status[stat];
+    });
+
+    if (agents.position === "warrior") {
+      agents.stat["ad"] *= 1 + agents.myAgent[0].class * 0.1
+      agents.stat["crit"] *= 1 + agents.myAgent[0].class * 0.1
+
+    } else if (agents.position === "tanker") {
+      agents.stat["hp"] *= 1 + agents.myAgent[0].class * 0.1
+      agents.stat["def"] *= 1 + agents.myAgent[0].class * 0.1
+
+    } else {
+      agents.stat["ap"] *= 1 + agents.myAgent[0].class * 0.1
+      agents.stat["mp"] *= 1 + agents.myAgent[0].class * 0.1
     }
+
+    // [2-3] 수치에 맞게 능력치 변동 적용
+    squadScore += Object.values(agents.stat).reduce((acc ,cur) => acc += cur * (1 + agents.myAgent[0].level * 0.02),0)
+
   }
   // [3] 팀 시너지 적용 여부 판단
   checkSquad.synergy !== "none" ? (squadScore *= 1.1) : squadScore;
@@ -67,42 +66,53 @@ const checkSquadScore = async (key) => {
 };
 
 /* 친선전 API */
-router.post("/users/:key/select-match", async (req, res, next) => {
+router.post("/users/:key/select-match", authMiddleware, async (req, res, next) => {
   const { key } = req.params; // 매개 경로변수에서 내 userKey 받음
   // 인증 미들웨어 거쳐서도 내 키 받음
   const { counterpart } = req.body; // body에서 상대방 아이디 수령
   // [검사 authMW] : 로그아웃 상태면 거부
   // [검사 authMW] : 로그인 정보와 아이디 불일치 시 거부
+
   // [검사 01] : 팀편성 안 됐을 시 거부
-  const { squadMem1, squadMem2, squadMem3 } = await prisma.users.findFirst({
-    where: { userKey: +key },
-  });
-  if (!(squadMem1 && squadMem2 && squadMem3)) return res.status(401).json({ message: "팀편성부터 하세요라!!" });
+  const { squadMem1, squadMem2, squadMem3 } = req.user
+  if (!(squadMem1 && squadMem2 && squadMem3)) return res
+    .status(401)
+    .json({ message: "팀편성부터 하세요라!!" });
+
   // [검사 02] : 상대 유저 정보가 존재하지 않을 시 거부
-  const counterUser = await prisma.users.findFirst({
-    where: { nickname: counterpart },
-  });
-  if (!counterUser) return res.status(404).json({ message: "존재하지 않는 유저임다!!" });
+  const counterUser = await prisma.users.findFirst({where: { nickname: counterpart }});
+  if (!counterUser) return res
+    .status(404)
+    .json({ message: "존재하지 않는 유저임다!!" });
+
   // [검사 03] : 상대 유저가 팀 편성이 되지 않은 경우 거부
-  if (!(counterUser.squadMem1 && counterUser.squadMem2 && counterUser.squadMem3)) {
-    return res.status(401).json({ message: "팀이 없는 유저에요!!" });
-  }
+  if (!(counterUser.squadMem1 && counterUser.squadMem2 && counterUser.squadMem3)) return res
+    .status(401)
+    .json({ message: "팀이 없는 유저에요!!" });
+
   // [1] 각 팀 스코어 체크
-  const myScore = await checkSquadScore(+key);
-  const counterScore = await checkSquadScore(counterUser.userKey);
+  const myScore = await checkSquadScore(req.user);
+  const counterScore = await checkSquadScore(counterUser);
+
   // [2] 스코어 비교해 경기 결과 계산
   let matchResult = "";
-  if (myScore > counterScore) {
+  const score = Math.round(Math.random() * 100)
+  const win = Math.round(myScore / (myScore + counterScore) * 100)
+  
+  console.log(score,win)
+
+  if (score < win) {
     matchResult = "승리!!";
-  } else if (myScore < counterScore) {
+  } else if (score > win) {
     matchResult = "패배!!";
-  } else if (myScore === counterScore) {
+  } else if (score === win) {
     matchResult = "무승부!!";
   }
+
   // [3] 각 팀의 스코어와 경기 결과 응답
   return res
     .status(201)
-    .json({ message: `나의 팀 점수 ${myScore}점, 상대 팀 점수 ${counterScore}점으로 ${matchResult}` });
+    .json({ message: `나의 팀 점수 ${myScore}점, 상대 팀 점수 ${counterScore}점이지만.. ${matchResult}` });
 });
 
 /* 매치 메이킹 */
