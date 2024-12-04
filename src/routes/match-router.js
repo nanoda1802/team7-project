@@ -210,5 +210,140 @@ router.post("/users/:key/rank-match", async (req, res, next) => {
     .json({ message: `나의 팀 점수 ${myScore}점, 상대 팀 점수 ${counterScore}점으로 ${matchResult}` });
 });
 
+// 랭킹 조회 api
+router.get('/users/ranks', async (req, res, next) => {
+  let resJson = [];
+
+  const ranking = await prisma.ranks.findMany({
+    orderBy: [{
+      mmr: 'desc',
+    }, {
+      loseCount: 'asc'
+    }],
+    select: {
+      userKey: true,
+      winCount: true,
+      loseCount: true,
+      drawCount: true,
+      mmr: true,
+      user: true
+    },
+    take: 10
+  })
+
+  for (let i = 0; i < ranking.length; i++) {
+
+    const winningRate = Math.round(ranking[i].winCount / (ranking[i].winCount + ranking[i].loseCount + ranking[i].drawCount) * 100) || 0
+
+    resJson = [...resJson,
+    {
+      rank: i + 1,
+      nickname: ranking[i].user.nickname,
+      favoriteAgent: ranking[i].user.favoriteAgent,
+      rankScore: ranking[i].mmr,
+      winningRate: `${winningRate}%`,
+      matchRecord: `${ranking[i].winCount} / ${ranking[i].loseCount} / ${ranking[i].drawCount} `
+    }
+    ]
+  }
+
+  return res
+    .status(200)
+    .json(resJson)
+
+})
+
+// 팀편성 API
+router.put('/users/:key/formation', champVerification, async (req, res, next) => {
+  const { formation } = req.body;
+  const { key } = req.params;
+  // 유효성 평가 미들웨어로 챔피언 배열 받아옴
+  const agent = req.agent
+  let myAgent = [];
+  let tank = false;
+
+  for (let i = 0; i < formation.length; i++) {
+
+    myAgent[i] = await prisma.myAgents.findFirst({ where: { agentKey: +formation[i], userKey: +key } })
+    //보유 챔피언 확인
+    if (!myAgent[i]) return res
+      .status(400)
+      .json({ errorMessage: `${agent[i].name}/${formation[i]}(은)는 현재 보유한 챔피언이 아닙니다.` })
+    if (agent[i].position === "tanker") {
+      tank = true;
+    }
+    if (myAgent.includes(myAgent[i])) return res
+      .status(400)
+      .json({ errorMessage: "동일 챔피언은 동시에 배치할 수 없습니다." })
+  }
+  // 탱커 여부 확인
+  if (!tank) return res
+    .status(400)
+    .json({ errorMessage: "팀편성에는 탱커가 1명 이상 필요합니다" })
+
+
+  if (myAgent.length !== 3) return res
+    .status(400)
+    .json({ errorMessage: "팀편성에는 3명의 챔피언이 필요합니다" })
+
+  //시너지 확인
+  const synergy = [...new Set(agent.map(e => e.team).filter((e, idx, arr) => {
+    if (idx !== arr.indexOf(e) && arr.indexOf(e) !== -1)
+      return true
+    else return false
+  }))].join("") || "none"
+
+  // 저장
+  const updateUser = await prisma.users.update({
+    where: { userKey: +key },
+    data: {
+      squadMem1: +myAgent[0].agentKey,
+      squadMem2: +myAgent[1].agentKey,
+      squadMem3: +myAgent[2].agentKey,
+      synergy
+    }
+  })
+
+  // 반환
+  return res
+    .status(201)
+    .json({
+      message: "성공적으로 팀이 편성되었습니다.",
+      squd: [`${myAgent[0].name}(${agent[0].position})`,
+      `${myAgent[1].name}(${agent[1].position})`,
+      `${myAgent[2].name}(${agent[2].position})`],
+      synergy
+    })
+})
+
+//대표 챔피언 설정 API
+router.patch('/users/:key/favorite', champVerification, async (req, res, next) => {
+  const { agent } = req
+  const { key } = req.params;
+
+  const myAgent = await prisma.myAgents.findFirst({ where: { agentKey: +agent.agentKey, userKey: +key } })
+  // 보유 챔피언 확인
+  if (!myAgent) return res
+    .status(400)
+    .json({ errorMessage: `${agent.name}/${agent.agentKey}(은)는 현재 보유한 챔피언이 아닙니다.` })
+
+  // 저장
+  const updateUser = await prisma.users.update({
+    where: { userKey: +key },
+    data: {
+      favoriteAgent: +myAgent.agentKey,
+    }
+  })
+
+  // 반환
+  return res
+    .status(201)
+    .json({
+      message: "대표 챔피언이 변경되었습니다.",
+      favorite: myAgent.name
+    })
+})
+
+
 /* 라우터 내보내기 */
 export default router;
