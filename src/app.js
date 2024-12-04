@@ -15,7 +15,12 @@ const publicPath = path.join(process.cwd(), 'assets');
 app.use(express.static(publicPath));
 
 /* Parser */
-app.use(cors());
+app.use(cors({
+  origin: 'http://127.0.0.1:5500', // 정확한 도메인
+  credentials: true, // 인증 정보 허용
+  allowedHeaders: ['Content-Type', 'Authorization'], // 허용할 헤더 설정
+  exposedHeaders: ['Authorization'], // 클라이언트가 Authorization 헤더를 접근할 수 있도록 설정
+}));
 app.use(express.json()); // 바디 파서
 app.use(bodyParser.urlencoded({ extended: true }));
 

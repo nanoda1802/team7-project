@@ -125,10 +125,10 @@ router.post('/sign-in', async (req, res) => {
       process.env.SECRET_KEY, // 비밀 키를 사용하여 서명
       { expiresIn: '1h' } // 토큰 유효 기간을 1시간으로 설정
     );
-
     // 성공 시 헤더에 authorization 토큰 추가
     res.setHeader('authorization', `Bearer ${token}`);
 
+    console.log('Response Headers:', res.getHeaders());
     // 로그인 성공 메시지와 사용자 키 반환
     return res
       .status(200)
