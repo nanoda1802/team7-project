@@ -145,8 +145,10 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
         const agents = await tx.agents.findMany({
           select: {
             agentKey: true,
+            team: true,
             name: true,
             grade: true,
+            position:true,
           },
         });
 
@@ -194,7 +196,7 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
             enhancerCount++;
             countA++;
             countS++;
-            results.push({ type: "enhancer" });
+            results.push({ agent: "enhancer" });
           } else if (random <= 0.94) {
             const selectedAgent = getRandomAgent(aAgents);
             countA = 0;
