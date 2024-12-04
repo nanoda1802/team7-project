@@ -90,31 +90,31 @@ router.post('/sign-up', async (req, res) => {
     });
   } catch (error) {
     console.error(error); // 에러를 콘솔에 출력
-    res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
+    return res
+      .status(500)
+      .json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
   }
 });
 
 // ** 로그인 API **
 // 사용자의 로그인 요청을 처리합니다.
 router.post('/sign-in', async (req, res) => {
-  const { id, pw } = req.body; // 요청 본문에서 아이디와 비밀번호를 추출
-
   try {
+    const { id, pw } = req.body; // 요청 본문에서 아이디와 비밀번호를 추출
+
     // 데이터베이스에서 아이디를 기준으로 사용자 조회
     const user = await prisma.users.findFirst({ where: { id } });
-
-    if (!user) {
-      // 사용자가 존재하지 않을 경우 404 상태 코드와 에러 메시지 반환
-      return res.status(404).json({ errorMessage: '존재하지 않는 아이디입니다' });
-    }
+    // 사용자가 존재하지 않을 경우 404 상태 코드와 에러 메시지 반환
+    if (!user) return res
+      .status(404)
+      .json({ errorMessage: '존재하지 않는 아이디입니다' });
 
     // 입력된 비밀번호와 데이터베이스의 암호화된 비밀번호를 비교
     const isPasswordValid = await bcrypt.compare(pw, user.pw);
-
-    if (!isPasswordValid) {
-      // 비밀번호가 일치하지 않으면 401 상태 코드와 에러 메시지 반환
-      return res.status(401).json({ errorMessage: '비밀번호가 일치하지 않습니다' });
-    }
+    // 비밀번호가 일치하지 않으면 401 상태 코드와 에러 메시지 반환
+    if (!isPasswordValid) return res
+      .status(401)
+      .json({ errorMessage: '비밀번호가 일치하지 않습니다' });
 
     // 비밀번호가 일치하면 JWT 생성
     const token = jwt.sign(
@@ -129,13 +129,17 @@ router.post('/sign-in', async (req, res) => {
     res.setHeader('authorization', `Bearer ${token}`);
 
     // 로그인 성공 메시지와 사용자 키 반환
-    res.status(200).json({
-      message: '로그인 되었습니다',
-      key: user.userKey, // 로그인된 사용자의 고유 키
-    });
+    return res
+      .status(200)
+      .json({
+        message: '로그인 되었습니다',
+        key: user.userKey, // 로그인된 사용자의 고유 키
+      });
   } catch (error) {
     console.error(error); // 에러를 콘솔에 출력
-    res.status(500).json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
+    return res
+      .status(500)
+      .json({ errorMessage: '서버 에러' }); // 서버 에러 메시지 반환
   }
 });
   
