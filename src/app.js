@@ -15,6 +15,7 @@ const publicPath = path.join(process.cwd(), 'assets');
 app.use(express.static(publicPath));
 
 /* Parser */
+app.use(cors());
 app.use(express.json()); // 바디 파서
 app.use(bodyParser.urlencoded({ extended: true }));
 
