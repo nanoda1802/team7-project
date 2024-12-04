@@ -47,5 +47,4 @@ router.get('/users/ranks',  async (req, res, next) => {
 
 })
 
-
 export default router
