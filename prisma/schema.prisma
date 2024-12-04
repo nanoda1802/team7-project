@@ -10,12 +10,13 @@ datasource db {
 model Users {
 	userKey Int @id @default(autoincrement()) @map("user_key")
 
-	id String @map("id")
+	id String @unique @map("id")
 	pw String @map("pw")
-	nickname String @map("nickname") 
+	nickname String @unique @map("nickname") 
 	squadMem1 Int @default(0) @map("squad_mem_1")
 	squadMem2 Int @default(0) @map("squad_mem_2")
 	squadMem3 Int @default(0) @map("squad_mem_3")
+	synergy String @default("none") @map("synergy")
 	favoriteAgent Int @default(0) @map("favorite_agent")
   createdAt DateTime @default(now()) @map("created_at")
 
