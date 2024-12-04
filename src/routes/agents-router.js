@@ -128,8 +128,7 @@ router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) =
         amount: `+${amount}`
       }]
     }
-
-    }
+  }
   //단일 매각
   } else {
     const { count } = req.body
@@ -140,7 +139,7 @@ router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) =
       resJson = [{ errorMessage: `판매할 챔피언(${agent.name})(이)가 부족합니다` }]
     }
     else {
-      
+
       const update = await prisma.users.update({
         where: { userKey: +key },
         data: {
@@ -168,6 +167,10 @@ router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) =
       }]
     }
   }
+
+  // 남은 숫자가 0 이하인 챔피언 삭제
+  const deleteMyAgent = await prisma.myAgents.deleteMany({where: {count: {lte: 0}, userKey: +key}})
+
   return res
     .status(200)
     .json(resJson)
