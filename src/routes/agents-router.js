@@ -97,8 +97,6 @@ router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) =
       const myAgent = await prisma.myAgents.findFirst({ where: { userKey: +key, agentKey: agent[i].agentKey } })
       const amount = agent[i].grade === "s" ? 300000 * +count : 100000 * +count 
 
-      console.log(agent)
-
       if (!myAgent || myAgent.count < count) {0
         resJson = [...resJson, { errorMessage: `판매할 챔피언(${agent[i].name})(이)가 부족합니다` }]
       } else {
