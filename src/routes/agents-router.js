@@ -1,10 +1,12 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
+import champVerification from "../middlewares/agent-verify-middleware.js"
 
 const router = express.Router();
 
-router.post("/agents", async (req, res, next) => {
+// 챔피언 도감 조회
+router.get("/agents", async (req, res, next) => {
   const { option } = req.body;
   const [showHow, showWhat, orderBy, orderHow] = option.split(",");
 
@@ -65,13 +67,12 @@ router.post("/agents", async (req, res, next) => {
   }
 });
 
-router.get("/users/:userKey/agents", async (req, res, next) => {
-  const { userKey } = req.params; //미들웨어에서 받기.
-  //const { user_key } = req.params;
-  //미들웨어 넣기.
+// 보유 챔피언 조회
+router.get("/users/:key/agents", async (req, res, next) => {
+  const { key } = req.params; //미들웨어에서 받기.
 
   const showMyAgents = await prisma.myAgents.findMany({
-    where: { userKey: +userKey },
+    where: { userKey: +key },
     select: {
       name: true,
       class: true,
@@ -90,57 +91,142 @@ router.get("/users/:userKey/agents", async (req, res, next) => {
   return res.status(200).json({ data: showMyAgents });
 });
 
-router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
-  const { numberOfGacha } = req.body;
-  const { userKey } = req.params;
+// 챔피언 매각
+router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) => {
+  const { key } = req.params
+  const { agent } = req
+  let resJson = [];
 
+  //다중 매각
+  if (Array.isArray(agent)) {
+    for (let i = 0;i < agent.length;i++) {
+      const count = req.body[i].count
+      const myAgent = await prisma.myAgents.findFirst({ where: { userKey: +key, agentKey: agent[i].agentKey } })
+      const amount = agent[i].grade === "s" ? 300000 * +count : 100000 * +count 
+
+      if (!myAgent || myAgent.count < count) {0
+        resJson = [...resJson, { errorMessage: `판매할 챔피언(${agent[i].name})(이)가 부족합니다` }]
+      } else {
+        const update = await prisma.users.update({
+          where: { userKey: +key },
+          data: {
+            asset: {
+              update: {
+                data: {
+                  cash: { increment: +amount }
+                }
+              }
+            },
+            myAgent: {
+              update: {
+                where: { myAgentKey: +myAgent.myAgentKey },
+                data: {
+                  count: { decrement: +count }
+                }
+              }
+            }
+          }
+        })
+
+      resJson = [...resJson, { 
+        message: `성공적으로 챔피언 ${agent[i].name}(을)를 ${count}만큼 판매하였습니다.`,
+        amount: `+${amount}`
+      }]
+    }
+  }
+  //단일 매각
+  } else {
+    const { count } = req.body
+    const myAgent = await prisma.myAgents.findFirst({ where: { userKey: +key, agentKey: agent.agentKey } })
+    const amount = agent.grade === "s" ? 300000 * count : 100000 * count
+
+    if (!myAgent || myAgent.count < count) {
+      resJson = [{ errorMessage: `판매할 챔피언(${agent.name})(이)가 부족합니다` }]
+    }
+    else {
+
+      const update = await prisma.users.update({
+        where: { userKey: +key },
+        data: {
+          asset: {
+            update: {
+              data: {
+                cash: { increment: +amount }
+              }
+            }
+          },
+          myAgent: {
+            update: {
+              where: { myAgentKey: +myAgent.myAgentKey },
+              data: {
+                count: { decrement: +count }
+              }
+            }
+          }
+        }
+      })
+
+      resJson = [{
+        message: `성공적으로 챔피언 ${agent.name}(을)를 ${count}만큼 판매하였습니다.`,
+        amount: `+${amount}`
+      }]
+    }
+  }
+
+  // 남은 숫자가 0 이하인 챔피언 삭제
+  const deleteMyAgent = await prisma.myAgents.deleteMany({where: {count: {lte: 0}, userKey: +key}})
+
+  return res
+    .status(200)
+    .json(resJson)
+
+})
+
+// 챔피언 뽑기 
+router.patch("/users/:key/agents/gacha", champVerification, async (req, res, next) => {
   try {
+    const { count } = req.body;
+    const { key } = req.params;
+    const pickUpAgent = req.agent
 
-    if (!numberOfGacha || isNaN(+numberOfGacha) || numberOfGacha <= 0) {
+    if (!count || isNaN(+count) || count <= 0) {
       throw new Error("뽑기 횟수는 양의 정수여야 합니다.");
     }
 
-    if (!req.body.agentKey || isNaN(+req.body.agentKey)){
-      throw new Error("올바른 agent_key를 입력해 주세요.");
+    if (pickUpAgent.grade !== "s") {
+      throw new Error(`해당 챔피언은 s급이 아닙니다.`);
     }
 
     const results = await prisma.$transaction(
       async (tx) => {
 
         const userAssets = await tx.assets.findUnique({
-          where: { userKey: +userKey },
+          where: { userKey: +key },
         });
 
         if (!userAssets) {
           throw new Error(" 유저의 지갑이 존재하지 않습니다.");
         }
 
+        let enhancerCount = 0;
+        let countA = userAssets.countA;
+        let countS = userAssets.countS;
+        const results = [];
         let totalCost = 0;
         let totalMileage = 0;
-        if (numberOfGacha >= 10) {
-          totalCost = numberOfGacha * 900;
-          totalMileage = numberOfGacha * 9;
+
+        //할인 적용
+        if (count >= 10) {
+          totalCost = count * 900;
+          totalMileage = count * 9;
         } else {
-          totalCost = numberOfGacha * 1000;
-          totalMileage = numberOfGacha * 10;
+          totalCost = count * 1000;
+          totalMileage = count * 10;
         }
 
         if (userAssets.cash < totalCost) {
           throw new Error("캐시가 부족합니다.");
         }
-
-        const pickUpAgent = await tx.agents.findFirst({
-          where: { agentKey: +req.body.agentKey },
-        });
-
-        if (!pickUpAgent) {
-          throw new Error(`${req.body.agentKey}에 해당하는 챔피언이 존재하지 않습니다.`);
-        }
-
-        if (pickUpAgent.grade!=="s") {
-          throw new Error(`해당 챔피언은 s급이 아닙니다.`);
-        }
-
 
         const agents = await tx.agents.findMany({
           select: {
@@ -152,17 +238,10 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
           },
         });
 
-
-
         const aAgents = agents.filter((agent) => agent.grade === "a");
         const sAgents = agents.filter((agent) => agent.grade === "s");
 
-        let enhancerCount = 0;
-        let countA = userAssets.countA;
-        let countS = userAssets.countS;
-        const results = [];
-
-        for (let i = 0; i < numberOfGacha; i++) {
+        for (let i = 0; i < count; i++) {
           if (countS === 50) {
             const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
               agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
@@ -171,7 +250,7 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
             results.push({ agent: selectedAgent });
             await updateMyAgentsTransaction(
               tx,
-              userKey,
+              key,
               selectedAgent.agentKey,
               selectedAgent.name
             );
@@ -184,7 +263,7 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
             results.push({ agent: selectedAgent });
             await updateMyAgentsTransaction(
               tx,
-              userKey,
+              key,
               selectedAgent.agentKey,
               selectedAgent.name
             );
@@ -204,7 +283,7 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
             results.push({ agent: selectedAgent });
             await updateMyAgentsTransaction(
               tx,
-              userKey,
+              key,
               selectedAgent.agentKey,
               selectedAgent.name
             );
@@ -217,14 +296,14 @@ router.patch("/users/:userKey/agents/gacha", async (req, res, next) => {
             results.push({ agent: selectedAgent });
             await updateMyAgentsTransaction(
               tx,
-              userKey,
+              key,
               selectedAgent.agentKey,
               selectedAgent.name
             );
           }
         }
         await tx.assets.update({
-          where: { userKey: +userKey },
+          where: { userKey: +key },
           data: {
             cash: { decrement: totalCost },
             enhancer: { increment: enhancerCount },
