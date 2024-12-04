@@ -6,7 +6,7 @@ import champVerification from "../middlewares/agent-verify-middleware.js"
 const router = express.Router();
 
 // 챔피언 도감 조회
-router.get("/agents", async (req, res, next) => {
+router.post("/agents", async (req, res, next) => {
   const { option } = req.body;
   const [showHow, showWhat, orderBy, orderHow] = option.split(",");
 
@@ -188,7 +188,7 @@ router.patch("/users/:key/agents/gacha", champVerification, async (req, res, nex
   try {
     const { count } = req.body;
     const { key } = req.params;
-    const pickUpAgent = req.agent
+    const pickUpAgent = req.agent;
 
     if (!count || isNaN(+count) || count <= 0) {
       throw new Error("뽑기 횟수는 양의 정수여야 합니다.");
