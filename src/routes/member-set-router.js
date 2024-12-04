@@ -1,12 +1,12 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js"
-import { strVerification } from "../middlewares/agent-verify-middleware.js"
+import champVerification from "../middlewares/agent-verify-middleware.js"
 
 //계정 라우터 생성
 const router = express.Router();
 
 // 팀편성 API
-router.put('/users/:key/formation', strVerification, async (req,res,next) => {
+router.put('/users/:key/formation', champVerification, async (req,res,next) => {
     const { formation } = req.body;
     const { key } = req.params;
     // 유효성 평가 미들웨어로 챔피언 배열 받아옴
@@ -16,11 +16,11 @@ router.put('/users/:key/formation', strVerification, async (req,res,next) => {
 
     for (let i = 0;i < formation.length;i++) {
         
-        myAgent[i] = await prisma.myAgents.findFirst({ where: { name: formation[i] } })
+        myAgent[i] = await prisma.myAgents.findFirst({ where: { agentKey: +formation[i], userKey: +key } })
         //보유 챔피언 확인
         if (!myAgent[i]) return res
             .status(400)
-            .json({errorMessage: `${formation[i]}(은)는 현재 보유한 챔피언이 아닙니다.`})
+            .json({errorMessage: `${agent[i].name}/${formation[i]}(은)는 현재 보유한 챔피언이 아닙니다.`})
         if (agent[i].position === "tanker") {
             tank = true;
         }
@@ -65,15 +65,15 @@ router.put('/users/:key/formation', strVerification, async (req,res,next) => {
 })
 
 //대표 챔피언 설정 API
-router.patch('/users/:key/favorite', strVerification, async (req,res,next) => {
-    const { agent } = req.body;
+router.patch('/users/:key/favorite', champVerification, async (req,res,next) => {
+    const { agent } = req
     const { key } = req.params;
 
-    const myAgent = await prisma.myAgents.findFirst({ where: { name: agent } })
+    const myAgent = await prisma.myAgents.findFirst({ where: { agentKey: +agent.agentKey, userKey: +key } })
     // 보유 챔피언 확인
     if (!myAgent) return res
         .status(400)
-        .json({ errorMessage: `${agent}(은)는 현재 보유한 챔피언이 아닙니다.`})
+        .json({ errorMessage: `${agent.name}/${agent.agentKey}(은)는 현재 보유한 챔피언이 아닙니다.`})
 
     // 저장
     const updateUser = await prisma.users.update({
