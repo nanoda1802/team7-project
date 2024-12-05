@@ -2,7 +2,6 @@ import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from '../middlewares/auth-middleware.js';
 import champVerification from "../middlewares/agent-verify-middleware.js"
-import { check } from "prisma";
 
 /* 계정 라우터 생성 */
 const router = express.Router();
@@ -313,7 +312,6 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
   let tank = false;
 
   for (let i = 0; i < formation.length; i++) {
-
     myAgent[i] = await prisma.myAgents.findFirst({ where: { agentKey: +formation[i], userKey: +key } })
     //보유 챔피언 확인
     if (!myAgent[i]) return res
@@ -322,7 +320,7 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
     if (agent[i].position === "tanker") {
       tank = true;
     }
-    if (myAgent.indexOf(myAgent[i]) !== i) return res
+    if (myAgent.map(e=>e.agentKey).indexOf(myAgent[i].agentKey) !== i) return res
       .status(400)
       .json({ errorMessage: "동일 챔피언은 동시에 배치할 수 없습니다." })
   }
@@ -331,14 +329,13 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
     .status(400)
     .json({ errorMessage: "팀편성에는 탱커가 1명 이상 필요합니다" })
 
-
   if (myAgent.length !== 3) return res
     .status(400)
     .json({ errorMessage: "팀편성에는 3명의 챔피언이 필요합니다" })
 
   //시너지 확인
   const synergy = [...new Set(agent.map(e => e.team).filter((e, idx, arr) => {
-    if (idx !== arr.indexOf(e) && arr.indexOf(e) !== -1)
+    if (idx !== arr.indexOf(e))
       return true
     else return false
   }))].join("") || "none"
