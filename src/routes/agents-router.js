@@ -224,22 +224,19 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
 router.patch("/users/agents/gacha", authMiddleware, champVerification, async (req, res, next) => {
   try {
     const { count } = req.body;
-    const { agent, user } = req
+    const { agent, user } = req;
     let enhancerCount = 0;
     let countA = userAssets.countA;
     let countS = userAssets.countS;
     let totalCost = 0;
-
-    // 횟수 확인
     if (!count || isNaN(+count) || count <= 0) return res
       .status(400)
       .json({ errorMessage :"뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요."})
-
+    
     // 픽업 챔피언 확인
     if (agent.grade !== "s") return res
       .status(400)
       .json({ errorMessage: "<pickup> 챔피언은 S급이여야 합니다!" })
-
     //할인 적용
     if (count >= 10) {
       totalCost = count * 900;

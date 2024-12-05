@@ -168,8 +168,7 @@
   </table>
   <script>
     const BASE_URL = 'http://localhost:9999/api';
-    const userKey = 4; // 지갑의 유저키
-    const pickup = "3"; // 픽업 설정
+    const pickup = "3"; 
 
     const cardContainer = document.getElementById('card-container');
     const singleDrawBtn = document.getElementById('single-draw-btn');
@@ -178,10 +177,11 @@
     // API 요청 함수
     async function fetchGachaResults(count, pickup) {
       try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/agents/gacha`, {
+        const response = await fetch(`${BASE_URL}/users/agents/gacha`, {
           method: "PATCH",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
           },
           body: JSON.stringify({count, pickup}),
         });
@@ -239,9 +239,10 @@
     // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
     async function fetchAssets() {
       try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/assets`, {
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}`, // 인증 토큰
+        const response = await fetch(`${BASE_URL}/users/assets`, {
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
           }
         });
 

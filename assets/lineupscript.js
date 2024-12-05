@@ -1,6 +1,4 @@
-
 const BASE_URL = 'http://localhost:9999/api';
-    const userKey = 3;
 
     // 상태 관리 변수
     let isTeamSelectionMode = false; //팀모드
@@ -74,9 +72,12 @@ const BASE_URL = 'http://localhost:9999/api';
       const formation = selectedTeam.map(agent => agent.agentKey);
 
       try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/formation`, {
+        const response = await fetch(`${BASE_URL}/users/formation`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
           body: JSON.stringify({ formation }),
         });
 
@@ -146,9 +147,12 @@ const BASE_URL = 'http://localhost:9999/api';
     // 카드 데이터 로드
     async function loadAgents() {
       try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/agents`, {
+        const response = await fetch(`${BASE_URL}/users/agents`, {
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
         });
 
         if (!response.ok) throw new Error('데이터를 가져오는 데 실패했습니다.');
