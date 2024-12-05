@@ -229,7 +229,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
     let countA = userAssets.countA;
     let countS = userAssets.countS;
     let totalCost = 0;
-    let totalMileage = 0;
 
     // 횟수 확인
     if (!count || isNaN(+count) || count <= 0) return res
@@ -244,10 +243,8 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
     //할인 적용
     if (count >= 10) {
       totalCost = count * 900;
-      totalMileage = count * 9;
     } else {
       totalCost = count * 1000;
-      totalMileage = count * 10;
     }
 
     // 비용 확인
@@ -357,7 +354,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
           enhancer: { increment: enhancerCount },
           countA: countA,
           countS: countS,
-          mileage: { increment: totalMileage },
         },
       });
 
