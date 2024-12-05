@@ -85,3 +85,38 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-family: "Noto Sans KR", sans-serif;
   }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .select-mode {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .select-mode:hover {
+      background-color: #0056b3;
+    }
+
+    .selected-team {
+      background-color: rgba(0, 0, 0, 0.2); /* 어두운 배경 */
+    }
+
+    .selected-representative {
+      background-color: rgba(255, 165, 0, 0.4); /* 주황색 배경 */
+    }
+
+    .disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }

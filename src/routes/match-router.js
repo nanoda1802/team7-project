@@ -67,7 +67,7 @@ const checkSquadScore = async (key) => {
 };
 
 /* 친선전 API */
-router.post("/users/:key/select-match", authMiddleware, async (req, res, next) => {
+router.post("/users/:key/select-match",authMiddleware, async (req, res, next) => {
   const { key } = req.params; // 매개 경로변수에서 내 userKey 받음
   // 인증 미들웨어 거쳐서도 내 키 받음
   const { counterpart } = req.body; // body에서 상대방 아이디 수령
