@@ -145,12 +145,13 @@ router.post("/sign-in", async (req, res) => {
   }
 });
 
-// cash 충전
-router.patch("/users/:key/cash", authMiddleware, async (req, res, next) => {
-  // 변수 선언
-  const { key } = req.params;
-
+  
+// cash 충전 
+router.patch("/users/:key/cash", authMiddleware,async (req, res, next) => {
   try {
+    // 변수 선언
+    const { key } = req.params;
+
     await prisma.assets.update({
       where: { userKey: +key },
       data: {
