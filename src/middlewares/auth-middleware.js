@@ -28,7 +28,6 @@ const authMiddleware = async (req, res, next) => {
     const loginUser = await prisma.users.findUnique({ where: { userKey: decoded.userKey } });
     // 사용자 정보가 데이터베이스에 없는 경우
 
-    console.log(urlUser,loginUser)
     if (!urlUser || !loginUser) return res
       .status(401)
       .json({ errorMessage: "해당하는 계정이 존재하지 않습니다" });
