@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>친선전과 정규전</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    .button-group {
+      margin: 20px 0;
+    }
+    .button-group button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      font-size: 16px;
+    }
+    .button-group button:hover {
+      background-color: #0056b3;
+    }
+    .nickname-input {
+      margin-top: 20px;
+      display: none;
+    }
+    .nickname-input input {
+      padding: 10px;
+      width: 80%;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .result-box {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+  /* 랭킹 컨테이너 */
+  #ranking-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  #ranking-container h2 {
+    margin-bottom: 20px;
+    color: #333333;
+    font-size: 24px;
+  }
+
+  /* 테이블 스타일 */
+  #ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: auto;
+  }
+
+  #ranking-table thead {
+    background-color: #007bff;
+    color: white;
+    font-size: 16px;
+  }
+
+  #ranking-table th, #ranking-table td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    font-size: 14px;
+  }
+
+  #ranking-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  #ranking-table tbody tr:nth-child(odd) {
+    background-color: #ffffff;
+  }
+
+  #ranking-table tbody tr:hover {
+    background-color: #f1f5ff;
+    cursor: pointer;
+  }
+
+  /* 승률 강조 */
+  #ranking-table tbody td:nth-child(5) {
+    font-weight: bold;
+    color: #28a745; /* 승률: 녹색 */
+  }
+
+  /* 반응형 테이블 */
+  @media (max-width: 768px) {
+    #ranking-table th, #ranking-table td {
+      font-size: 12px;
+      padding: 8px;
+    }
+  }
+
+  </style>
+</head>
+<body>
+  <div id="ranking-container">
+    <h2>랭킹</h2>
+    <table id="ranking-table" border="1">
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>닉네임</th>
+          <th>선호 에이전트</th>
+          <th>랭크 점수</th>
+          <th>승률</th>
+          <th>전적</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- 랭킹 데이터가 여기에 동적으로 추가됩니다 -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="container">
+    <h1>친선전과 정규전</h1>
+    <div class="button-group">
+      <button id="friendly-match-btn">친선전</button>
+      <button id="ranked-match-btn">정규전</button>
+    </div>
+    <div class="nickname-input" id="nickname-input">
+      <input type="text" id="nickname" placeholder="상대방 닉네임 입력">
+      <button id="start-friendly-match-btn">친선전 시작</button>
+    </div>
+    <div class="result-box" id="result-box">
+      결과가 여기에 표시됩니다.
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'http://localhost:9999/api';
+    const userKey = 4;
+    
+    // 친선전 버튼 클릭
+    document.getElementById("friendly-match-btn").addEventListener("click", () => {
+      document.getElementById("nickname-input").style.display = "block"; // 닉네임 입력창 표시
+      document.getElementById("result-box").textContent = "친선전을 준비 중입니다...";
+    });
+    
+    // 정규전 버튼 클릭
+    document.getElementById("ranked-match-btn").addEventListener("click", async () => {
+      const resultBox = document.getElementById("result-box");
+      const token = localStorage.getItem("authToken"); // 토큰 가져오기
+    
+      if (!token) {
+        resultBox.textContent = "로그인이 필요합니다.";
+        return;
+      }
+    
+      resultBox.textContent = "정규전을 시작합니다...";
+    
+      try {
+        // 정규전 API 호출
+        const response = await fetch(`${BASE_URL}/users/${userKey}/rank-match`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 토큰 추가
+          }
+        });
+    
+        const data = await response.json();
+        resultBox.textContent = data.message || "정규전 결과를 가져오지 못했습니다.";
+
+        await fetchRanking();
+      } catch (error) {
+        resultBox.textContent = "오류가 발생했습니다.";
+        console.error(error);
+      }
+    });
+    
+    // 친선전 시작 버튼 클릭
+    document.getElementById("start-friendly-match-btn").addEventListener("click", async () => {
+      const nickname = document.getElementById("nickname").value;
+      const resultBox = document.getElementById("result-box");
+      const token = localStorage.getItem("authToken"); // 토큰 가져오기
+    
+      if (!nickname) {
+        resultBox.textContent = "상대방 닉네임을 입력해주세요.";
+        return;
+      }
+    
+      if (!token) {
+        resultBox.textContent = "로그인이 필요합니다.";
+        return;
+      }
+    
+      resultBox.textContent = "친선전을 시작합니다...";
+    
+      try {
+        // 친선전 API 호출
+        const response = await fetch(`${BASE_URL}/users/${userKey}/select-match`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 토큰 추가
+          },
+          body: JSON.stringify({ counterpart: nickname })
+        });
+    
+        const data = await response.json();
+        resultBox.textContent = data.message || "친선전 결과를 가져오지 못했습니다.";
+        await fetchRanking();
+      } catch (error) {
+        resultBox.textContent = "오류가 발생했습니다.";
+        console.error(error);
+      }
+    });
+
+    async function fetchRanking() {
+  try {
+    const response = await fetch(`${BASE_URL}/users/ranks`);
+    if (!response.ok) throw new Error('랭킹 데이터를 불러오지 못했습니다.');
+
+    const rankings = await response.json();
+    const rankingTableBody = document.querySelector("#ranking-table tbody");
+
+    // 기존 랭킹 데이터 초기화
+    rankingTableBody.innerHTML = "";
+
+    // 새로운 랭킹 데이터 추가
+    rankings.forEach((rank, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${rank.rank}</td>
+        <td>${rank.nickname}</td>
+        <td>${rank.favoriteAgent}</td>
+        <td>${rank.rankScore}</td>
+        <td>${rank.winningRate}</td>
+        <td>${rank.matchRecord}</td>
+      `;
+      rankingTableBody.appendChild(row);
+    });
+  } catch (error) {
+    console.error(error);
+    alert("랭킹 데이터를 불러오는 데 실패했습니다.");
+  }
+}
+
+// 페이지 로드 시 랭킹 데이터를 가져옴
+window.addEventListener("load", fetchRanking);
+
+
+    </script>
+</body>
+</html>
