@@ -145,13 +145,12 @@ router.post('/sign-in', async (req, res) => {
 });
   
 // cash 충전 
-router.patch("/users/:key/cash", authMiddleware,async (req, res, next) => {
+router.patch("/users/cash", authMiddleware,async (req, res, next) => {
   try {
-    // 변수 선언
-    const { key } = req.params;
+    const { user } = req
 
     await prisma.assets.update({
-      where: { userKey: +key },
+      where: { userKey: user.userKey },
       data: {
         cash: { increment: 100000 },
         mileage: { increment: 100 },
@@ -169,11 +168,11 @@ router.patch("/users/:key/cash", authMiddleware,async (req, res, next) => {
 });
 
 // 보유 재화 조회
-router.get("/users/:key/assets", authMiddleware, async (req, res, naxt) => {
+router.get("/users/assets", authMiddleware, async (req, res, naxt) => {
   try {
-    const { key } = req.params; // 매개변수에서 key 추출
+    const { user } = req
     const assets = await prisma.assets.findFirst({
-      where: { userKey: +key }, // key를 숫자로 변환
+      where: { userKey: user.userKey }, 
       select: {
         cash: true,
         mileage: true,

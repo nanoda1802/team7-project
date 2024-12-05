@@ -8,8 +8,6 @@ dotenv.config();
 // 인증 미들웨어
 const authMiddleware = async (req, res, next) => {
   try {
-    const {key} = req.params;
-
     // 요청 Authorization 값 확인
     const { authorization } = req.headers;
     // "Bearer" 이후의 토큰 부분만 추출
@@ -22,20 +20,13 @@ const authMiddleware = async (req, res, next) => {
     // 토큰 검증
     const decoded = jwt.verify(token, process.env.SECRET_KEY);
 
-    // params로 받은 user 확인
-    const urlUser = await prisma.users.findUnique({ where: { userKey: +key } });    
     //JWT 토큰에서 가져온 사용자 정보를 이용해서 데이터베이스에서 해당 사용자가 실제로 존재하는지 확인하는 작업
     const loginUser = await prisma.users.findUnique({ where: { userKey: decoded.userKey } });
     // 사용자 정보가 데이터베이스에 없는 경우
 
-    if (!urlUser || !loginUser) return res
+    if (!loginUser) return res
       .status(401)
       .json({ errorMessage: "해당하는 계정이 존재하지 않습니다" });
-
-    // 계정 주인 확인
-    if (urlUser.userKey !== loginUser.userKey) return res
-      .status(401)
-      .json({ errorMessage: "당신의 계정이 아닙니다." });
 
     // 사용자 정보를 req 객체에 추가
     req.user = loginUser;
