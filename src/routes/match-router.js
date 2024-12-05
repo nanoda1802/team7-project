@@ -1,4 +1,5 @@
 import express from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from '../middlewares/auth-middleware.js';
 import champVerification from "../middlewares/agent-verify-middleware.js"
@@ -190,6 +191,8 @@ router.post("/users/rank-match", authMiddleware, async (req, res, next) => {
         }
       });
 
+    },{
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     })
     matchResult = "무승부!!";
   }
@@ -245,6 +248,8 @@ router.post("/users/rank-match", authMiddleware, async (req, res, next) => {
           }
         },
       });
+    },{
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     });
 
     return 
