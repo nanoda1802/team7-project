@@ -2,6 +2,7 @@ import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
 import champVerification from "../middlewares/agent-verify-middleware.js"
+import authMiddleware from '../middlewares/auth-middleware.js';
 
 const router = express.Router();
 

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>카드 관리</title>
+  <link rel="stylesheet" href="lineupstyles.css">
+  <style>
+    /* CSS 추가 */
+    .button-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .select-mode {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .select-mode:hover {
+      background-color: #0056b3;
+    }
+
+    .selected-team {
+      background-color: rgba(0, 0, 0, 0.2); /* 어두운 배경 */
+    }
+
+    .selected-representative {
+      background-color: rgba(255, 165, 0, 0.4); /* 주황색 배경 */
+    }
+
+    .disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="button-container">
+      <button id="teamSelectBtn" class="select-mode">팀 지정</button>
+      <button id="representativeSelectBtn" class="select-mode">대표 캐릭터 지정</button>
+    </div>
+    <div class="card-grid" id="card-container">
+      <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
+    </div>
+    <div class="resources">
+      보유 재화: 1,000 골드
+    </div>
+  </div>
+
+  <script src="lineupscript.js"></script>
+</body>
+</html>
