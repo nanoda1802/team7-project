@@ -62,6 +62,12 @@
     font-family: "Noto Sans KR", sans-serif;
   }
 
+  .team {
+    font-size: 0.9em;
+    color: #666;
+    margin: 5px 0;
+  }
+  
   .stars {
     color: #ffc107; /* 별 색상 */
     font-size: 14px;

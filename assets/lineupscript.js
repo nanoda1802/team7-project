@@ -162,10 +162,11 @@ const BASE_URL = 'http://localhost:9999/api';
           card.innerHTML = `
             <div class="card-header">${agent.name}</div>
             <div class="card-body">
-              <span>${agent.agent.grade}</span>
+               <span class="grade">${agent.agent.grade}</span>
             </div>
             <div class="card-footer">
               <div class="stars">${'★'.repeat(agent.class)}</div>
+              <div class="team">${agent.agent.team}</div>
               <div class="position">포지션: ${agent.agent.position}</div>
             </div>
           `;

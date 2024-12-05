@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가챠 및 보유 재화</title>
+  <link rel="stylesheet" href="gachastyles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* 중앙 정렬 */
+      justify-content: flex-start;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* 지갑 테이블 스타일 */
+    table {
+      width: 60%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #ffffff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+      font-size: 18px;
+      width: 33.3333333333%;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    td {
+      color: #555;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    /* 가챠 카드 스타일 */
+    #card-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px auto;
+      width: 80%;
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      width: 120px;
+      height: 180px;
+      border: 2px solid #adb5bd;
+      border-radius: 10px;
+      background-color: #ffffff; /* 흰색 배경 */
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+      padding: 10px;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .card-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #212529;
+      font-family: "Noto Sans KR", sans-serif;
+    }
+
+    .card-body {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 12px;
+      color: #495057;
+    }
+
+    .card-footer {
+      font-size: 12px;
+      font-family: "Noto Sans KR", sans-serif;
+    }
+
+    .team {
+      font-size: 0.9em;
+      color: #666;
+      margin: 5px 0;
+    }
+
+    .position {
+      font-size: 12px;
+      color: #6c757d; /* 포지션 색상 */
+    }
+
+    /* 버튼 스타일 */
+    button {
+      padding: 10px 20px;
+      margin:10px 10px 30px 10px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #fff;
+      background-color: #007bff;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>픽업:가렌</h1>
+  <div id="card-container">
+    <!-- 뽑기 결과 카드가 여기에 표시됩니다 -->
+  </div>
+  <div id="button-container">
+    <button id="single-draw-btn">1뽑</button>
+    <button id="multi-draw-btn">10뽑</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>캐쉬</th>
+        <th>마일리지</th>
+        <th>재료</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td id="cash">-</td>
+        <td id="mileage">-</td>
+        <td id="enhancer">-</td>
+      </tr>
+    </tbody>
+  </table>
+  <script>
+    const BASE_URL = 'http://localhost:9999/api';
+    const userKey = 4; // 지갑의 유저키
+    const pickup = "3"; // 픽업 설정
+
+    const cardContainer = document.getElementById('card-container');
+    const singleDrawBtn = document.getElementById('single-draw-btn');
+    const multiDrawBtn = document.getElementById('multi-draw-btn');
+
+    // API 요청 함수
+    async function fetchGachaResults(count, pickup) {
+      try {
+        const response = await fetch(`${BASE_URL}/users/${userKey}/agents/gacha`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({count, pickup}),
+        });
+
+        if (!response.ok) {
+          throw new Error("가챠 요청 실패!");
+        }
+
+        const { results } = await response.json();
+        displayCards(results);
+
+        fetchAssets();
+      } catch (error) {
+        console.error(error);
+        alert("가챠 결과를 불러오는 데 실패했습니다.");
+      }
+    }
+
+    // 카드 DOM 생성 및 표시
+    function displayCards(results) {
+      cardContainer.innerHTML = ""; // 기존 카드 초기화
+      results.forEach((result) => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+
+        // 강화재료 처리
+        if (result.agent === "enhancer") {
+          card.innerHTML = `
+            <div class="card-header">강화 재료</div>
+            <div class="card-body">
+              <span>등급: 재료</span>
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+            <div class="card-header">${result.agent.name}</div>
+            <div class="card-body">
+              <span>등급: ${result.agent.grade}</span>
+            </div>
+            <div class="card-footer">
+              <div class="team">${result.agent.team}</div>
+              <div class="position">포지션: ${result.agent.position}</div>
+            </div>
+          `;
+        }
+
+        cardContainer.appendChild(card);
+      });
+    }
+
+    // 버튼 클릭 이벤트
+    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup)); // 1뽑
+    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup)); // 10뽑
+
+    // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
+    async function fetchAssets() {
+      try {
+        const response = await fetch(`${BASE_URL}/users/${userKey}/assets`, {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}`, // 인증 토큰
+          }
+        });
+
+        if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
+
+        const { data } = await response.json();
+
+        // 테이블에 데이터를 채움
+        document.getElementById("cash").textContent = data.cash || 0;
+        document.getElementById("mileage").textContent = data.mileage || 0;
+        document.getElementById("enhancer").textContent = data.enhancer || 0;
+      } catch (error) {
+        console.error(error);
+        alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+      }
+    }
+
+    // 페이지 로드 시 재화 데이터를 가져옴
+    window.addEventListener("load", fetchAssets);
+  </script>
+</body>
+</html>
