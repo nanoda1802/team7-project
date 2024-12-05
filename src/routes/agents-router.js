@@ -509,6 +509,29 @@ async function deductMaterials(userID, requiredMaterials) {
   });
 }
 
+// 랜덤 챔피언 뽑기
+function getRandomAgent(agents, weighting = null) {
+  if (!weighting) {
+    // 기본 균등 확률
+    return agents[Math.floor(Math.random() * agents.length)];
+  }
+  const weights = agents.map((agent) => weighting(agent.agentKey)); //가중치 반환. [1/3, 2/45,...]
+  const totalWeight = weights.reduce((acc, w) => acc + w, 0);
+  const random = Math.random() * totalWeight;
+
+  let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
+  for (let i = 0; i < agents.length; i++) {
+    cumulative += weights[i]; //가중치를 모은다.
+    if (random <= cumulative) {
+      // 가중치가 랜덤에 걸렸을때.
+      return agents[i]; //그 가중치의 선수.
+    }
+  }
+
+  return agents[agents.length - 1]; //이건 만약 오류나면 그냥 마지막꺼 내놓음.
+}
+
+
 // agent업데이트 트랜잭션
 async function updateMyAgentsTransaction(tx, userKey, agentKey, name) {
   const existingAgent = await tx.myAgents.findFirst({

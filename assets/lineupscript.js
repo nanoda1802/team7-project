@@ -99,9 +99,12 @@ const BASE_URL = 'http://localhost:9999/api';
         return;
       }
       try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/favorite`, {
+        const response = await fetch(`${BASE_URL}/users/favorite`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
           body: JSON.stringify({ agent: selectedRepresentative.agentKey }),
         });
 

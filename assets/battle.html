@@ -131,7 +131,7 @@
         <tr>
           <th>순위</th>
           <th>닉네임</th>
-          <th>선호 에이전트</th>
+          <th>대표 캐릭터</th>
           <th>랭크 점수</th>
           <th>승률</th>
           <th>전적</th>
@@ -160,7 +160,6 @@
 
   <script>
     const BASE_URL = 'http://localhost:9999/api';
-    const userKey = 4;
     
     // 친선전 버튼 클릭
     document.getElementById("friendly-match-btn").addEventListener("click", () => {
@@ -182,12 +181,12 @@
     
       try {
         // 정규전 API 호출
-        const response = await fetch(`${BASE_URL}/users/${userKey}/rank-match`, {
+        const response = await fetch(`${BASE_URL}/users/rank-match`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 토큰 추가
-          }
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
         });
     
         const data = await response.json();
@@ -220,11 +219,11 @@
     
       try {
         // 친선전 API 호출
-        const response = await fetch(`${BASE_URL}/users/${userKey}/select-match`, {
+        const response = await fetch(`${BASE_URL}/users/select-match`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 토큰 추가
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
           },
           body: JSON.stringify({ counterpart: nickname })
         });
