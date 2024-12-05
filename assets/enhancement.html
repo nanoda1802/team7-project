@@ -235,6 +235,13 @@ const BASE_URL ='http://localhost:9999/api';
       console.error(error);
     }
   }
+  
+  function updatePopupContent(agent) {
+  document.getElementById('popup-name').textContent = agent.name;
+  document.getElementById('popup-class').textContent = agent.agent.grade;
+  document.getElementById('popup-count').textContent = agent.count;
+  document.getElementById('popup-level').textContent = agent.level;
+}
 
   function openPopup(agent) {
     const popup = document.getElementById('popup');
@@ -262,27 +269,49 @@ const BASE_URL ='http://localhost:9999/api';
   }
 
   // API 호출 함수들
-  async function handleUpgrade(agent) {
-    console.log(agent);
-    try {
-      const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
-        method: 'PATCH',
-        headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-          },
-        body: JSON.stringify({agent}),
-      });
-      console.log('Response:', response);
+  async function handleUpgrade(agentKey) {
+  console.log(agentKey);
+  try {
+    const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
+      method: 'PATCH',
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+      },
+      body: JSON.stringify({ agent: agentKey }),
+    });
 
-      if (!response.ok) throw new Error('강화에 실패했습니다.');
-      alert('강화 성공!');
-      closePopup();
-    } catch (error) {
-      console.error(error);
-      alert('강화 중 오류가 발생했습니다.');
-    }
+    if (!response.ok) throw new Error('강화에 실패했습니다.');
+
+    const result = await response.json();
+
+    // 강화 성공 메시지
+    alert(`메시지: ${result.message}
+    경고: ${result.warning || "없음"}
+    성공 확률: ${result.successRate}
+    남은 재료: ${result.currentMaterials}`);
+
+    // 서버에서 새로운 에이전트 데이터를 받아 팝업 업데이트
+    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents`, {
+      method: 'GET',
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+      }
+    });
+
+    if (!updatedAgentResponse.ok) throw new Error('강화 후 데이터를 가져오는 데 실패했습니다.');
+
+    const updatedAgent = await updatedAgentResponse.json();
+
+    // 팝업 업데이트
+    updatePopupContent(updatedAgent.data);
+
+  } catch (error) {
+    console.error(error);
+    alert('강화 중 오류가 발생했습니다.');
   }
+}
 
   async function handlePromotion(agent) {
     console.log(agent);

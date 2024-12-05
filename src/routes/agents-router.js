@@ -95,6 +95,7 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
     .json({ data: showMyAgents });
 });
 
+
 // 챔피언 매각
 // 챔피언 매각
 router.patch(
@@ -407,7 +408,7 @@ router.patch(
       const successRate = getSuccessRate(currentLevel);
       const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
 
-      const requiredMaterials = getSuccessRate(currentLevel + 1); // 다음 레벨에 필요한 재료
+      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
 
       console.log(!checkMaterials(materials, requiredMaterials));
       if (!checkMaterials(materials, requiredMaterials)) {
@@ -515,12 +516,34 @@ router.patch(
   }
 );
 
-// 
+// 필요한 재료 확인 함수
 function checkMaterials(materials, requiredMaterials) {
   return materials.enhancer >= requiredMaterials.enhancer;
 }
 
-// 레벨의 강화 확율을 가져오는 함수
+// 강화에 필요한 재료를 가져오는 함수
+function getMaterials(level) {
+  const materials = {
+    1: { enhancer: 1 },
+    2: { enhancer: 1 },
+    3: { enhancer: 1 },
+    4: { enhancer: 3 },
+    5: { enhancer: 3 },
+    6: { enhancer: 3 },
+    7: { enhancer: 5 },
+    8: { enhancer: 5 },
+    9: { enhancer: 5 },
+    10: { enhancer: 6 },
+    11: { enhancer: 6 },
+    12: { enhancer: 6 },
+    13: { enhancer: 7 },
+    14: { enhancer: 7 },
+    15: { enhancer: 7 },
+  };
+  return materials[level] || { enhancer: 0 };
+}
+
+// 레벨마다 강화 확률 정하는 로직
 function getSuccessRate(level) {
   if (level >= 1 && level <= 3) return 0.9;
   if (level >= 4 && level <= 6) return 0.7;
