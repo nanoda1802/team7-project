@@ -132,8 +132,6 @@ router.post("/sign-in", async (req, res) => {
     );
     // 성공 시 헤더에 authorization 토큰 추가
     res.setHeader("authorization", `Bearer ${token}`);
-
-    console.log('Response Headers:', res.getHeaders());
     // 로그인 성공 메시지와 사용자 키 반환
     return res.status(200).json({
       message: "로그인 되었습니다",
