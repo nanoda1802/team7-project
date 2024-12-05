@@ -71,11 +71,11 @@ router.post("/agents", async (req, res, next) => {
 });
 
 // 보유 챔피언 조회
-router.get("/users/:key/agents", async (req, res, next) => {
-  const { key } = req.params; //미들웨어에서 받기.
+router.get("/users/agents", authMiddleware, async (req, res, next) => {
+  const { user } = req
 
   const showMyAgents = await prisma.myAgents.findMany({
-    where: { userKey: +key },
+    where: { userKey: user.userKey },
     select: {
       agentKey: true,
       name: true,
@@ -92,72 +92,16 @@ router.get("/users/:key/agents", async (req, res, next) => {
     },
   });
 
-  return res.status(200).json({ data: showMyAgents });
+  return res
+    .status(200)
+    .json({ data: showMyAgents });
 });
 
 // 챔피언 매각
-router.patch(
-  "/users/:key/agents/sale",
-  champVerification,
-  async (req, res, next) => {
-    const { key } = req.params;
-    const { agent } = req;
-    let resJson = [];
-
-    //다중 매각
-    if (Array.isArray(agent)) {
-      for (let i = 0; i < agent.length; i++) {
-        const count = req.body[i].count;
-        const myAgent = await prisma.myAgents.findFirst({
-          where: { userKey: +key, agentKey: agent[i].agentKey },
-        });
-        const amount =
-          agent[i].grade === "s" ? 300000 * +count : 100000 * +count;
-
-        if (!myAgent || myAgent.count < count) {
-          0;
-          resJson = [
-            ...resJson,
-            {
-              errorMessage: `판매할 챔피언(${agent[i].name})(이)가 부족합니다`,
-            },
-          ];
-        } else {
-          const update = await prisma.users.update({
-            where: { userKey: +key },
-            data: {
-              asset: {
-                update: {
-                  data: {
-                    cash: { increment: +amount },
-                  },
-                },
-              },
-              myAgent: {
-                update: {
-                  where: { myAgentKey: +myAgent.myAgentKey },
-                  data: {
-                    count: { decrement: +count },
-                  },
-                },
-              },
-            },
-          });
-
-          resJson = [
-            ...resJson,
-            {
-              message: `성공적으로 챔피언 ${agent[i].name}(을)를 ${count}만큼 판매하였습니다.`,
-              amount: `+${amount}`,
-            },
-          ];
-        }
-      }
-      //단일 매각
-    } else {
-      const { count } = req.body;
+router.patch("/users/agents/sale", authMiddleware, champVerification, async (req, res, next) => {
+  const { agent,user } = req;
       const myAgent = await prisma.myAgents.findFirst({
-        where: { userKey: +key, agentKey: agent.agentKey },
+        where: { userKey: user.userKey, agentKey: agent[i].agentKey },
       });
       const amount = agent.grade === "s" ? 300000 * count : 100000 * count;
 
@@ -167,7 +111,7 @@ router.patch(
         ];
       } else {
         const update = await prisma.users.update({
-          where: { userKey: +key },
+          where: { userKey: user.userKey },
           data: {
             asset: {
               update: {
