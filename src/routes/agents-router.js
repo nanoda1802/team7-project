@@ -468,26 +468,11 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
       },
     });
 
-    // 포지션 특화 능력치 10% 증가
-    const originalStats = {
-      mainStat1: myAgent.mainStat1,
-      mainStat2: myAgent.mainStat2,
-    };
-
-    const newStats = {
-      mainStat1: Math.floor(originalStats.mainStat1 * 1.1), // 10% 증가
-      mainStat2: Math.floor(originalStats.mainStat2 * 1.1), // 10% 증가
-    };
-
     // 승급 완료 시 상태코드와 승급 결과 반환
     res.status(200).json({
       message: "승급 결과",
       result: updatedAgent,
       class: `${myAgent.class} ⇒ ${updatedAgent.class}`,
-      stat: {
-        mainStat1: `${originalStats.mainStat1} ⇒ ${newStats.mainStat1}`,
-        mainStat2: `${originalStats.mainStat2} ⇒ ${newStats.mainStat2}`,
-      },
     });
   } catch (error) {
     console.error(error);
