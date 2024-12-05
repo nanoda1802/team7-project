@@ -449,7 +449,7 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
     }
 
     // 이미 6단 선수 시 거부
-    if (myAgent.rank >= 6) {
+    if (myAgent.class >= 6) {
       return res.status(400).json({ message: "이미 6단 선수입니다." });
     }
 
@@ -462,8 +462,9 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
     const updatedAgent = await prisma.myAgents.update({
       where: { myAgentKey: +agentKey, userKey: +key },
       data: {
+        count: { decrement: 2 },
         level: { increment: 1 },
-        class: { decrement: 1 },
+        class: { increment: 1 },
       },
     });
 
