@@ -173,10 +173,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
     await prisma.$transaction(async (tx) => {
       await tx.ranks.updateMany({
         where: {
-          OR: [
-            { userKey: +key },
-            { userKey: counterUser.userKey }
-          ]
+          userKey: { in: [+key, counterUser.userKey] }
         },
         data: {
           drawCount: { increment: 1 },
@@ -185,10 +182,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
       });
       await tx.assets.updateMany({
         where: {
-          OR: [
-            { userKey: +key },
-            { userKey: counterUser.userKey }
-          ]
+          userKey: { in: [+key, counterUser.userKey] }
         },
         data: {
           enhancer: { increment: 5 },
