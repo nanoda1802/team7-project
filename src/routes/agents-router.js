@@ -19,13 +19,13 @@ router.post("/agents", async (req, res, next) => {
       const validShowHow = ["team", "position", "grade"];
       if (!validShowHow.includes(showHow)) return res
         .status(400)
-        .json({ errorMessage: `유효하지 않은 showHow 값입니다. 가능한 값: ${validShowHow.join(", ")}`});
+        .json({ errorMessage: `유효하지 않은 showHow 값입니다. 목록: [${validShowHow.join(", ")}]`});
 
       // showWhat 유효성 검사
       const validShowWhat = await prisma.$queryRawUnsafe(`SELECT ${showHow} FROM Agents GROUP BY 1`).then((what) => what.map((e) => Object.values(e)[0]))
       if (!validShowWhat.includes(showWhat)) return res
         .status(400)
-        .json({ errorMessage: `유효하지 않은 showWhat 값입니다. 가능한 값: ${validShowWhat.join(", ")}`});
+        .json({ errorMessage: `유효하지 않은 showWhat 값입니다. 목록: [${validShowWhat.join(", ")}]`});
 
       // 기본 쿼리 설정
       whereCondition = { [showHow]: showWhat }
@@ -35,13 +35,13 @@ router.post("/agents", async (req, res, next) => {
       const validOrderBy = ["name", "position", "grade", "team"];
       if (!validOrderBy.includes(orderBy)) return res
         .status(400)
-        .json({ errorMessage: `유효하지 않은 orderBy 값입니다. 가능한 값: ${validOrderBy.join(", ")}`});
+        .json({ errorMessage: `유효하지 않은 orderBy 값입니다. 목록: [${validOrderBy.join(", ")}]`});
 
       // orderHow 유효성 검사
       const validOrderHow = ["asc", "desc"];
       if (orderHow && !validOrderHow.includes(orderHow)) return res
         .status(400)
-        .json({ errorMessage: `유효하지 않은 orderHow 값입니다. 가능한 값: ${validOrderHow.join(", ")}` });
+        .json({ errorMessage: `유효하지 않은 orderHow 값입니다. 목록: [${validOrderHow.join(", ")}]` });
 
       // 기본값은 이름순 정렬
       orderByCondition = { [orderBy]: orderHow || "asc" }
