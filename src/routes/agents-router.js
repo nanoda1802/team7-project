@@ -1,6 +1,6 @@
 import express from "express";
-import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
+import { prisma } from "../utils/prisma/index.js";
 import champVerification from "../middlewares/agent-verify-middleware.js";
 import authMiddleware from "../middlewares/auth-middleware.js";
 
@@ -224,137 +224,148 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
 router.patch("/users/agents/gacha", authMiddleware, champVerification, async (req, res, next) => {
   try {
     const { count } = req.body;
-    const { agent,user } = req
+    const { agent, user } = req
+    let enhancerCount = 0;
+    let countA = userAssets.countA;
+    let countS = userAssets.countS;
+    let totalCost = 0;
+    let totalMileage = 0;
 
-    if (!count || isNaN(+count) || count <= 0) {
-      throw new Error("뽑기 횟수는 양의 정수여야 합니다.");
+    // 횟수 확인
+    if (!count || isNaN(+count) || count <= 0) return res
+      .status(400)
+      .json({ errorMessage :"뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요."})
+
+    // 픽업 챔피언 확인
+    if (agent.grade !== "s") return res
+      .status(400)
+      .json({ errorMessage: "<pickup> 챔피언은 S급이여야 합니다!" })
+
+    //할인 적용
+    if (count >= 10) {
+      totalCost = count * 900;
+      totalMileage = count * 9;
+    } else {
+      totalCost = count * 1000;
+      totalMileage = count * 10;
     }
 
-    if (pickUpAgent.grade !== "s") {
-      throw new Error(`해당 챔피언은 s급이 아닙니다.`);
-    }
+    // 비용 확인
+    const userAssets = await tx.assets.findUnique({where: { userKey: user.userKey }});
+    if (userAssets.cash < totalCost) return res
+      .res(400)
+      .json({ errorMessage: "캐시가 부족합니다." })
 
-    const results = await prisma.$transaction(
-      async (tx) => {
-        const userAssets = await tx.assets.findUnique({
-          where: { userKey: user.userKey },
-        });
+    const results = await prisma.$transaction( async (tx) => {
+      const results = [];
+      // 총 챔피언 조회
+      const agents = await tx.agents.findMany({
+        select: {
+          agentKey: true,
+          team: true,
+          name: true,
+          grade: true,
+          position: true,
+        },
+      });
+      // 급 나누기
+      const aAgents = agents.filter((agent) => agent.grade === "a");
+      const sAgents = agents.filter((agent) => agent.grade === "s");
 
-        if (!userAssets) {
-          throw new Error(" 유저의 지갑이 존재하지 않습니다.");
+      // 랜덤 챔피언 뽑기
+      function getRandomAgent(agents, weighting = null) {
+        if (!weighting) {
+          // 기본 균등 확률
+          return agents[Math.floor(Math.random() * agents.length)];
         }
+        const weights = agents.map((agent) => weighting(agent.agentKey)); //가중치 반환. [1/3, 2/45,...]
+        const totalWeight = weights.reduce((acc, w) => acc + w, 0);
+        const random = Math.random() * totalWeight;
 
-        let enhancerCount = 0;
-        let countA = userAssets.countA;
-        let countS = userAssets.countS;
-        const results = [];
-        let totalCost = 0;
-        let totalMileage = 0;
-
-        //할인 적용
-        if (count >= 10) {
-          totalCost = count * 900;
-          totalMileage = count * 9;
-        } else {
-          totalCost = count * 1000;
-          totalMileage = count * 10;
-        }
-
-        if (userAssets.cash < totalCost) {
-          throw new Error("캐시가 부족합니다.");
-        }
-
-        const agents = await tx.agents.findMany({
-          select: {
-            agentKey: true,
-            team: true,
-            name: true,
-            grade: true,
-            position: true,
-          },
-        });
-
-        const aAgents = agents.filter((agent) => agent.grade === "a");
-        const sAgents = agents.filter((agent) => agent.grade === "s");
-
-        for (let i = 0; i < count; i++) {
-          if (countS === 50) {
-            const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
-              agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
-            );
-            countS = 0;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-            continue;
-          }
-
-          if (countA === 5) {
-            const selectedAgent = getRandomAgent(aAgents);
-            countA = 0;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-            continue;
-          }
-
-          const random = Math.random();
-          if (random <= 0.7) {
-            enhancerCount++;
-            countA++;
-            countS++;
-            results.push({ agent: "enhancer" });
-          } else if (random <= 0.94) {
-            const selectedAgent = getRandomAgent(aAgents);
-            countA = 0;
-            countS++;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-          } else {
-            const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
-              agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
-            );
-            countS = 0;
-            countA++;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
+        let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
+        for (let i = 0; i < agents.length; i++) {
+          cumulative += weights[i]; //가중치를 모은다.
+          if (random <= cumulative) {
+            // 가중치가 랜덤에 걸렸을때.
+            return agents[i]; //그 가중치의 선수.
           }
         }
-        await tx.assets.update({
-          where: { userKey: user.userKey },
-          data: {
-            cash: { decrement: totalCost },
-            enhancer: { increment: enhancerCount },
-            countA: countA,
-            countS: countS,
-            mileage: { increment: totalMileage },
-          },
-        });
-
-        return results;
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        return agents[agents.length - 1]; //이건 만약 오류나면 그냥 마지막꺼 내놓음.
       }
-    );
+
+      // 뽑기 횟수만큼 반복
+      for (let i = 0; i < count; i++) {
+        // 픽업 천장일 시
+        if (countS === 50) {
+          const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
+            // 픽업 캐릭터하고 같은 캐릭터인지 판정해서 확률을 다르게 적용
+            agentKey === pickup ? 10 : 4
+          );
+          //픽업 확률 초기화
+          countS = 0;
+          // 나온값 을 저장
+          results.push({ agent: selectedAgent });
+
+          await updateMyAgentsTransaction(tx,user.userKey,selectedAgent.agentKey,selectedAgent.name);
+          continue;
+        }
+        // A 천장
+        if (countA === 5) {
+          const selectedAgent = getRandomAgent(aAgents);
+          countA = 0;
+          results.push({ agent: selectedAgent });
+          await updateMyAgentsTransaction(tx,user.userKey,selectedAgent.agentKey,selectedAgent.name);
+          continue;
+        }
+
+        const random = Math.random();
+        if (random <= 0.7) {
+          enhancerCount++;
+          countA++;
+          countS++;
+          results.push({ agent: "enhancer" });
+        } else if (random <= 0.94) {
+          const selectedAgent = getRandomAgent(aAgents);
+          countA = 0;
+          countS++;
+          results.push({ agent: selectedAgent });
+          await updateMyAgentsTransaction(
+            tx,
+            user.userKey,
+            selectedAgent.agentKey,
+            selectedAgent.name
+          );
+        } else {
+          const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
+            agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
+          );
+          countS = 0;
+          countA++;
+          results.push({ agent: selectedAgent });
+          await updateMyAgentsTransaction(
+            tx,
+            user.userKey,
+            selectedAgent.agentKey,
+            selectedAgent.name
+          );
+        }
+      }
+      await tx.assets.update({
+        where: { userKey: user.userKey },
+        data: {
+          cash: { decrement: totalCost },
+          enhancer: { increment: enhancerCount },
+          countA: countA,
+          countS: countS,
+          mileage: { increment: totalMileage },
+        },
+      });
+
+      return results;
+    },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+    });
 
     // Return success response
     return res.status(200).json({
@@ -363,33 +374,27 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: error.message || "서버 오류" });
+    return res
+      .status(500)
+      .json({ error: "서버 오류" });
   }
 });
 
 // 챔피언 강화
-router.patch(
-  "/users/:key/agents/intensify",
-  authMiddleware,
-  async (req, res) => {
-    const { key } = req.params;
-    const { agentKey } = req.body;
-
-    // if (loggedInUserId !== key) {
-    //   return res.status(403).json({ message: "당신 계정이 아녀요!!" });
-    // }
-
+router.patch("/users/agents/intensify", authMiddleware, champVerification, async (req, res) => {
     try {
+      const { user, agent } = req;
+
       // 보유 에이전트 확인
       const player = await prisma.myAgents.findFirst({
-        where: { agentKey: +agentKey, userKey: +key },
+        where: { agentKey: agent.agentKey, userKey: user.userKey },
         include: {
           agent: true, // 에이전트 정보 포함
         },
       });
       console.log("확인1");
 
-      if (!player || player.userKey !== +key) {
+      if (!player || player.userKey !== user.userKey) {
         return res
           .status(404)
           .json({ message: "보유하고 있는 선수가 아닙니다." });
@@ -402,7 +407,7 @@ router.patch(
 
       // 보유 재료 확인
       const materials = await prisma.assets.findFirst({
-        where: { userKey: +key },
+        where: { userKey: user.userKey },
       });
       console.log("확인2");
       const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
@@ -425,7 +430,7 @@ router.patch(
             data: { level: nextLevel },
           });
           // 강화 재료 차감 로직 추가
-          await deductMaterials(+key, requiredMaterials);
+          await deductMaterials(user.userKey, requiredMaterials);
         }
       });
 
@@ -442,16 +447,15 @@ router.patch(
 );
 
 // 챔피언 승급
-router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
-  const { key } = req.params;
-  const { agentKey } = req.body;
+router.patch("/users/agents/promote", authMiddleware, champVerification, async (req, res) => {
+  const { agent,user } = req
 
   // 로그인 된 계정의 아이디가 아닌 경우 거절
 
   try {
     // 보유 선수 확인
     const myAgent = await prisma.myAgents.findUnique({
-      where: { agentKey: +agentKey, userKey: +key },
+      where: { agentKey: agent.agentKey, userKey: user.userKey },
     });
 
     if (!myAgent) {
@@ -472,7 +476,7 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
 
     // 중복 보유 선수만 있다면 승급 처리
     const updatedAgent = await prisma.myAgents.update({
-      where: { agentKey: +agentKey, userKey: +key },
+      where: { agentKey: agent.agentKey, userKey: user.userKey },
       data: {
         count: { decrement: 1 },
         class: { increment: 1 },
@@ -513,28 +517,6 @@ async function deductMaterials(userID, requiredMaterials) {
       cash: { decrement: requiredMaterials.cash },
     },
   });
-}
-
-// 랜덤 챔피언 뽑기
-function getRandomAgent(agents, weighting = null) {
-  if (!weighting) {
-    // 기본 균등 확률
-    return agents[Math.floor(Math.random() * agents.length)];
-  }
-  const weights = agents.map((agent) => weighting(agent.agentKey)); //가중치 반환. [1/3, 2/45,...]
-  const totalWeight = weights.reduce((acc, w) => acc + w, 0);
-  const random = Math.random() * totalWeight;
-
-  let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
-  for (let i = 0; i < agents.length; i++) {
-    cumulative += weights[i]; //가중치를 모은다.
-    if (random <= cumulative) {
-      // 가중치가 랜덤에 걸렸을때.
-      return agents[i]; //그 가중치의 선수.
-    }
-  }
-
-  return agents[agents.length - 1]; //이건 만약 오류나면 그냥 마지막꺼 내놓음.
 }
 
 // agent업데이트 트랜잭션
