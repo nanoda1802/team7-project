@@ -8,45 +8,47 @@ const router = express.Router();
 
 // 챔피언 도감 조회
 router.post("/agents", async (req, res, next) => {
+  const { option } = req.body;
+  const [showHow, showWhat, orderBy, orderHow] = option.split(",");
+
+  const validOrderBy = ["name", "position", "grade", "team"]; // 허용할 수 있는 orderBy 값들
+  const validOrderHow = ["asc", "desc"]; // 허용할 수 있는 정렬 방향
+
+  // showHow가 team, position, grade 중 하나인지 체크
+  const validShowHow = ["team", "position", "grade"];
+  if (!validShowHow.includes(showHow)) {
+    return res.status(400).json({ error: "유효하지 않은 showHow 값입니다." });
+  }
+
+  // showWhat 유효성 검사
+  if (!showWhat) {
+    return res.status(400).json({ error: "showWhat 값이 필요합니다." });
+  }
+
+  // orderBy 유효성 검사
+  if (!validOrderBy.includes(orderBy)) {
+    return res.status(400).json({
+      error: `유효하지 않은 orderBy 값입니다. 가능한 값: ${validOrderBy.join(", ")}`,
+    });
+  }
+
+  // orderHow 유효성 검사
+  if (!validOrderHow.includes(orderHow)) {
+    return res.status(400).json({
+      error: `유효하지 않은 orderHow 값입니다. 가능한 값: ${validOrderHow.join(", ")}`,
+    });
+  }
+
+  // 기본 쿼리 설정
+  const whereCondition = {
+    [showHow]: showWhat, // showHow에 맞는 조건 설정 (team, position, grade)
+  };
+
+  const orderByCondition = validOrderBy.includes(orderBy)
+    ? { [orderBy]: validOrderHow.includes(orderHow) ? orderHow : "asc" }
+    : { name: "asc" }; // 기본값은 이름순 정렬
+
   try {
-    const {showHow, showWhat, orderBy, orderHow} = req.body
-    // 기본 값 설정
-    let whereCondition = { NOT : []}
-    let orderByCondition = { name: "asc" }
-
-    if (showHow) {
-      // showHow 유효성 검사
-      const validShowHow = ["team", "position", "grade"];
-      if (!validShowHow.includes(showHow)) return res
-        .status(400)
-        .json({ errorMessage: `유효하지 않은 showHow 값입니다. 목록: [${validShowHow.join(", ")}]`});
-
-      // showWhat 유효성 검사
-      const validShowWhat = await prisma.$queryRawUnsafe(`SELECT ${showHow} FROM Agents GROUP BY 1`).then((what) => what.map((e) => Object.values(e)[0]))
-      if (!validShowWhat.includes(showWhat)) return res
-        .status(400)
-        .json({ errorMessage: `유효하지 않은 showWhat 값입니다. 목록: [${validShowWhat.join(", ")}]`});
-
-      // 기본 쿼리 설정
-      whereCondition = { [showHow]: showWhat }
-    }
-    if (orderBy) {
-      // orderBy 유효성 검사
-      const validOrderBy = ["name", "position", "grade", "team"];
-      if (!validOrderBy.includes(orderBy)) return res
-        .status(400)
-        .json({ errorMessage: `유효하지 않은 orderBy 값입니다. 목록: [${validOrderBy.join(", ")}]`});
-
-      // orderHow 유효성 검사
-      const validOrderHow = ["asc", "desc"];
-      if (orderHow && !validOrderHow.includes(orderHow)) return res
-        .status(400)
-        .json({ errorMessage: `유효하지 않은 orderHow 값입니다. 목록: [${validOrderHow.join(", ")}]` });
-
-      // 기본값은 이름순 정렬
-      orderByCondition = { [orderBy]: orderHow || "asc" }
-    }
-    
     // 동적 쿼리 실행
     const showAgents = await prisma.agents.findMany({
       where: whereCondition,
@@ -59,14 +61,10 @@ router.post("/agents", async (req, res, next) => {
       orderBy: [orderByCondition], // 동적으로 생성된 orderBy 조건 사용
     });
 
-    return res
-      .status(200)
-      .json({ data: showAgents });
+    return res.status(200).json({ data: showAgents });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ error: "서버 오류" });
+    return res.status(500).json({ error: "서버 오류" });
   }
 });
 
@@ -382,7 +380,6 @@ router.patch(
   async (req, res) => {
     try {
       const { user, agent } = req;
-
       // 보유 에이전트 확인
       const player = await prisma.myAgents.findFirst({
         where: { agentKey: agent.agentKey, userKey: user.userKey },
@@ -410,10 +407,9 @@ router.patch(
       const successRate = getSuccessRate(currentLevel);
       const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
 
-      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-      const hasEnoughEnhancer =
-        materials.enhancer >= requiredMaterials.enhancer;
-
+      const requiredMaterials = getSuccessRate(currentLevel + 1); // 다음 레벨에 필요한 재료
+      const hasEnoughEnhancer = materials.enhancer >= requiredMaterials.enhancer;
+      console.log(successRate,successRatePercentage,requiredMaterials,hasEnoughEnhancer)
       if (!checkMaterials(materials, requiredMaterials)) {
         return res.status(400).json({ message: "강화 재료가 부족합니다." });
       }
@@ -423,7 +419,6 @@ router.patch(
       let nextLevel = currentLevel;
       let message = ""; // 메시지 초기화
       let warningMessage = ""; // 경고 메시지 초기화
-
       if (currentLevel >= 10) {
         warningMessage = "주의! 10강부터 강화실패하면 레벨이 1 떨어집니다!!";
       }
@@ -440,7 +435,7 @@ router.patch(
           message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했습니다.`;
         }
       }
-      // level +ddd
+      
       // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
       await prisma.$transaction(async (prisma) => {
         await prisma.myAgents.update({

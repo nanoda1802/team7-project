@@ -20,6 +20,7 @@ app.use(cors({
     callback(null, true); // 모든 Origin 허용
   },
   credentials: true, // 인증 정보 허용
+  methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'], // 허용할 헤더 설정
   exposedHeaders: ['Authorization'], // 클라이언트가 Authorization 헤더를 접근할 수 있도록 설정
 }));

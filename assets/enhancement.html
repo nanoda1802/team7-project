@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>카드 관리</title>
-  <link rel="stylesheet" href="myagentstyles.css">
   <style>
     .card-container {
       display: flex;
@@ -190,72 +189,148 @@
     </div>
   </div>
 
-  <script>
-    async function loadAgents() {
-      const BASE_URL = 'http://localhost:9999/api';
-      const userKey = 3;
+ <script> 
 
-      try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/agents`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-        });
+const BASE_URL ='http://localhost:9999/api';
 
-        if (!response.ok) {
-          throw new Error('데이터를 가져오는 데 실패했습니다.');
-        }
+  async function loadAgents() {
+    
 
-        const data = await response.json();
-        const cardContainer = document.getElementById('card-container');
-        
-        data.data.forEach(agent => {
-          const card = document.createElement('div');
-          card.classList.add('card');
-          card.innerHTML = `
-            <div class="card-header">${agent.name}</div>
-            <div class="card-body">
-              <span>${agent.agent.grade}</span>
-            </div>
-            <div class="card-footer">
-              <div class="stars">${'★'.repeat(agent.class)}</div>
-              <div class="position">포지션: ${agent.agent.position}</div>
-            </div>
-          `;
+    try {
+      const response = await fetch(`${BASE_URL}/users/agents`, {
+        method: 'GET',
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+      });
 
-          // 카드 클릭 이벤트
-          card.addEventListener('click', () => openPopup(agent));
-          cardContainer.appendChild(card);
-        });
-      } catch (error) {
-        alert('오류가 발생했습니다.');
-        console.error(error);
+      if (!response.ok) {
+        throw new Error('데이터를 가져오는 데 실패했습니다.');
       }
-    }
 
-    function openPopup(agent) {
-      // 팝업 열기
-      const popup = document.getElementById('popup');
-      const popupOverlay = document.getElementById('popup-overlay');
+      const data = await response.json();
+      const cardContainer = document.getElementById('card-container');
       
-      // 팝업 내용 설정
-      document.getElementById('popup-name').textContent = agent.name;
-      document.getElementById('popup-class').textContent = agent.agent.grade;
-      document.getElementById('popup-count').textContent = agent.count;
-      document.getElementById('popup-level').textContent = agent.level;
+      data.data.forEach(agent => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.innerHTML = `
+          <div class="card-header">${agent.name}</div>
+          <div class="card-body">
+            <span>${agent.agent.grade}</span>
+          </div>
+          <div class="card-footer">
+            <div class="stars">${'★'.repeat(agent.class)}</div>
+            <div class="position">포지션: ${agent.agent.position}</div>
+          </div>
+        `;
 
-      // 팝업 표시
-      popup.style.display = 'block';
-      popupOverlay.style.display = 'block';
+        // 카드 클릭 이벤트
+        card.addEventListener('click', () => openPopup(agent));
+        cardContainer.appendChild(card);
+      });
+    } catch (error) {
+      alert('오류가 발생했습니다.');
+      console.error(error);
     }
+  }
 
-    // 팝업 오버레이 클릭 시 닫기
-    document.getElementById('popup-overlay').addEventListener('click', () => {
-      document.getElementById('popup').style.display = 'none';
-      document.getElementById('popup-overlay').style.display = 'none';
-    });
+  function openPopup(agent) {
+    const popup = document.getElementById('popup');
+    const popupOverlay = document.getElementById('popup-overlay');
+    
+    // 팝업 내용 설정
+    document.getElementById('popup-name').textContent = agent.name;
+    document.getElementById('popup-class').textContent = agent.agent.grade;
+    document.getElementById('popup-count').textContent = agent.count;
+    document.getElementById('popup-level').textContent = agent.level;
 
-    // 초기화
-    loadAgents();
-  </script>
+    // 각 버튼의 클릭 이벤트 설정
+    document.getElementById('upgradeBtn').onclick = () => handleUpgrade(agent.agentKey);
+    document.getElementById('promotionBtn').onclick = () => handlePromotion(agent.agentKey);
+    document.getElementById('sellBtn').onclick = () => handleSell(agent.agentKey);
+
+    // 팝업 표시
+    popup.style.display = 'block';
+    popupOverlay.style.display = 'block';
+  }
+
+  function closePopup() {
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('popup-overlay').style.display = 'none';
+  }
+
+  // API 호출 함수들
+  async function handleUpgrade(agent) {
+    console.log(agent);
+    try {
+      const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
+        method: 'PATCH',
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+        body: JSON.stringify({agent}),
+      });
+      console.log('Response:', response);
+
+      if (!response.ok) throw new Error('강화에 실패했습니다.');
+      alert('강화 성공!');
+      closePopup();
+    } catch (error) {
+      console.error(error);
+      alert('강화 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function handlePromotion(agent) {
+    console.log(agent);
+    try {
+      const response = await fetch(`${BASE_URL}/users/agents/promote`, {
+        method: 'PATCH',
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+        body: JSON.stringify({ agent: agent}),
+      });
+
+      if (!response.ok) throw new Error('승급에 실패했습니다.');
+      alert('승급 성공!');
+      closePopup();
+    } catch (error) {
+      console.error(error);
+      alert('승급 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function handleSell(agent) {
+    console.log(agent);
+    try {
+      const response = await fetch(`${BASE_URL}/users/agents/sale`, {
+        method: 'PATCH',
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+        body: JSON.stringify({ agent: agent}),
+      });
+
+      if (!response.ok) throw new Error('매각에 실패했습니다.');
+      alert('매각 성공!');
+      closePopup();
+    } catch (error) {
+      console.error(error);
+      alert('매각 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 팝업 오버레이 클릭 시 닫기
+  document.getElementById('popup-overlay').addEventListener('click', closePopup);
+
+  // 초기화
+  loadAgents();
+</script>
 </body>
 </html>
