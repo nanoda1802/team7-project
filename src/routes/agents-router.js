@@ -401,7 +401,7 @@ router.patch(
       // 강화 시도 (고정 확률 성공 20% 실패 80%)
       const success = Math.random() < 0.2; // 20% 확률
       const nextLevel = success ? currentLevel + 1 : currentLevel;
-
+      // level +ddd
       // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
       await prisma.$transaction(async (prisma) => {
         if (success) console.log("확인3");
@@ -428,6 +428,7 @@ router.patch(
     }
   }
 );
+// 강화 재료 소진이 안됨
 
 // 챔피언 승급
 router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
@@ -439,7 +440,7 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
   try {
     // 보유 선수 확인
     const myAgent = await prisma.myAgents.findUnique({
-      where: { myAgentKey: +agentKey, userKey: +key },
+      where: { agentKey: +agentKey, userKey: +key },
     });
 
     if (!myAgent) {
@@ -460,10 +461,9 @@ router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
 
     // 중복 보유 선수만 있다면 승급 처리
     const updatedAgent = await prisma.myAgents.update({
-      where: { myAgentKey: +agentKey, userKey: +key },
+      where: { agentKey: +agentKey, userKey: +key },
       data: {
-        count: { decrement: 2 },
-        level: { increment: 1 },
+        count: { decrement: 1 },
         class: { increment: 1 },
       },
     });
