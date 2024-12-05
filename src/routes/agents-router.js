@@ -398,7 +398,7 @@ router.patch(
       if (currentLevel >= 15) {
         return res.status(400).json({ message: "이미 15강입니다." });
       }
-
+      console.log(currentLevel);
       // 보유 재료 확인
       const materials = await prisma.assets.findFirst({
         where: { userKey: user.userKey },
@@ -408,8 +408,8 @@ router.patch(
       const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
 
       const requiredMaterials = getSuccessRate(currentLevel + 1); // 다음 레벨에 필요한 재료
-      const hasEnoughEnhancer = materials.enhancer >= requiredMaterials.enhancer;
-      console.log(successRate,successRatePercentage,requiredMaterials,hasEnoughEnhancer)
+
+      console.log(!checkMaterials(materials, requiredMaterials));
       if (!checkMaterials(materials, requiredMaterials)) {
         return res.status(400).json({ message: "강화 재료가 부족합니다." });
       }
@@ -515,12 +515,12 @@ router.patch(
   }
 );
 
-// 필요한 재료 확인 함수
+// 
 function checkMaterials(materials, requiredMaterials) {
   return materials.enhancer >= requiredMaterials.enhancer;
 }
 
-// 강화에 필요한 재료를 가져오는 함수
+// 레벨의 강화 확율을 가져오는 함수
 function getSuccessRate(level) {
   if (level >= 1 && level <= 3) return 0.9;
   if (level >= 4 && level <= 6) return 0.7;
