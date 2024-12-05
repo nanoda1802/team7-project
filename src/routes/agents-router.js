@@ -1,7 +1,8 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
-import champVerification from "../middlewares/agent-verify-middleware.js"
+import champVerification from "../middlewares/agent-verify-middleware.js";
+import authMiddleware from "../middlewares/auth-middleware.js";
 
 const router = express.Router();
 
@@ -79,11 +80,11 @@ router.get("/users/:key/agents", async (req, res, next) => {
       class: true,
       level: true,
       count: true,
-      agent:{
+      agent: {
         select: {
-         team: true,    
-         position: true,
-         grade: true,
+          team: true,
+          position: true,
+          grade: true,
         },
       },
     },
@@ -93,20 +94,75 @@ router.get("/users/:key/agents", async (req, res, next) => {
 });
 
 // 챔피언 매각
-router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) => {
-  const { key } = req.params
-  const { agent } = req
-  let resJson = [];
+router.patch(
+  "/users/:key/agents/sale",
+  champVerification,
+  async (req, res, next) => {
+    const { key } = req.params;
+    const { agent } = req;
+    let resJson = [];
 
-  //다중 매각
-  if (Array.isArray(agent)) {
-    for (let i = 0;i < agent.length;i++) {
-      const count = req.body[i].count
-      const myAgent = await prisma.myAgents.findFirst({ where: { userKey: +key, agentKey: agent[i].agentKey } })
-      const amount = agent[i].grade === "s" ? 300000 * +count : 100000 * +count 
+    //다중 매각
+    if (Array.isArray(agent)) {
+      for (let i = 0; i < agent.length; i++) {
+        const count = req.body[i].count;
+        const myAgent = await prisma.myAgents.findFirst({
+          where: { userKey: +key, agentKey: agent[i].agentKey },
+        });
+        const amount =
+          agent[i].grade === "s" ? 300000 * +count : 100000 * +count;
 
-      if (!myAgent || myAgent.count < count) {0
-        resJson = [...resJson, { errorMessage: `판매할 챔피언(${agent[i].name})(이)가 부족합니다` }]
+        if (!myAgent || myAgent.count < count) {
+          0;
+          resJson = [
+            ...resJson,
+            {
+              errorMessage: `판매할 챔피언(${agent[i].name})(이)가 부족합니다`,
+            },
+          ];
+        } else {
+          const update = await prisma.users.update({
+            where: { userKey: +key },
+            data: {
+              asset: {
+                update: {
+                  data: {
+                    cash: { increment: +amount },
+                  },
+                },
+              },
+              myAgent: {
+                update: {
+                  where: { myAgentKey: +myAgent.myAgentKey },
+                  data: {
+                    count: { decrement: +count },
+                  },
+                },
+              },
+            },
+          });
+
+          resJson = [
+            ...resJson,
+            {
+              message: `성공적으로 챔피언 ${agent[i].name}(을)를 ${count}만큼 판매하였습니다.`,
+              amount: `+${amount}`,
+            },
+          ];
+        }
+      }
+      //단일 매각
+    } else {
+      const { count } = req.body;
+      const myAgent = await prisma.myAgents.findFirst({
+        where: { userKey: +key, agentKey: agent.agentKey },
+      });
+      const amount = agent.grade === "s" ? 300000 * count : 100000 * count;
+
+      if (!myAgent || myAgent.count < count) {
+        resJson = [
+          { errorMessage: `판매할 챔피언(${agent.name})(이)가 부족합니다` },
+        ];
       } else {
         const update = await prisma.users.update({
           where: { userKey: +key },
@@ -114,323 +170,287 @@ router.patch('/users/:key/agents/sale', champVerification, async(req,res,next) =
             asset: {
               update: {
                 data: {
-                  cash: { increment: +amount }
-                }
-              }
+                  cash: { increment: +amount },
+                },
+              },
             },
             myAgent: {
               update: {
                 where: { myAgentKey: +myAgent.myAgentKey },
                 data: {
-                  count: { decrement: +count }
-                }
-              }
-            }
-          }
-        })
-
-      resJson = [...resJson, { 
-        message: `성공적으로 챔피언 ${agent[i].name}(을)를 ${count}만큼 판매하였습니다.`,
-        amount: `+${amount}`
-      }]
-    }
-  }
-  //단일 매각
-  } else {
-    const { count } = req.body
-    const myAgent = await prisma.myAgents.findFirst({ where: { userKey: +key, agentKey: agent.agentKey } })
-    const amount = agent.grade === "s" ? 300000 * count : 100000 * count
-
-    if (!myAgent || myAgent.count < count) {
-      resJson = [{ errorMessage: `판매할 챔피언(${agent.name})(이)가 부족합니다` }]
-    }
-    else {
-
-      const update = await prisma.users.update({
-        where: { userKey: +key },
-        data: {
-          asset: {
-            update: {
-              data: {
-                cash: { increment: +amount }
-              }
-            }
-          },
-          myAgent: {
-            update: {
-              where: { myAgentKey: +myAgent.myAgentKey },
-              data: {
-                count: { decrement: +count }
-              }
-            }
-          }
-        }
-      })
-
-      resJson = [{
-        message: `성공적으로 챔피언 ${agent.name}(을)를 ${count}만큼 판매하였습니다.`,
-        amount: `+${amount}`
-      }]
-    }
-  }
-
-  // 남은 숫자가 0 이하인 챔피언 삭제
-  const deleteMyAgent = await prisma.myAgents.deleteMany({where: {count: {lte: 0}, userKey: +key}})
-
-  return res
-    .status(200)
-    .json(resJson)
-
-})
-
-// 챔피언 뽑기 
-router.patch("/users/:key/agents/gacha", champVerification, async (req, res, next) => {
-  try {
-    const { count } = req.body;
-    const { key } = req.params;
-    const pickUpAgent = req.agent
-
-    if (!count || isNaN(+count) || count <= 0) {
-      throw new Error("뽑기 횟수는 양의 정수여야 합니다.");
-    }
-
-    if (pickUpAgent.grade !== "s") {
-      throw new Error(`해당 챔피언은 s급이 아닙니다.`);
-    }
-
-    const results = await prisma.$transaction(
-      async (tx) => {
-
-        const userAssets = await tx.assets.findUnique({
-          where: { userKey: +key },
-        });
-
-        if (!userAssets) {
-          throw new Error(" 유저의 지갑이 존재하지 않습니다.");
-        }
-
-        let enhancerCount = 0;
-        let countA = userAssets.countA;
-        let countS = userAssets.countS;
-        const results = [];
-        let totalCost = 0;
-        let totalMileage = 0;
-
-        //할인 적용
-        if (count >= 10) {
-          totalCost = count * 900;
-          totalMileage = count * 9;
-        } else {
-          totalCost = count * 1000;
-          totalMileage = count * 10;
-        }
-
-        if (userAssets.cash < totalCost) {
-          throw new Error("캐시가 부족합니다.");
-        }
-
-        const agents = await tx.agents.findMany({
-          select: {
-            agentKey: true,
-            team: true,
-            name: true,
-            grade: true,
-            position:true,
+                  count: { decrement: +count },
+                },
+              },
+            },
           },
         });
 
-        const aAgents = agents.filter((agent) => agent.grade === "a");
-        const sAgents = agents.filter((agent) => agent.grade === "s");
-
-        for (let i = 0; i < count; i++) {
-          if (countS === 50) {
-            const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
-              agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
-            );
-            countS = 0;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              key,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-            continue;
-          }
-
-          if (countA === 5) {
-            const selectedAgent = getRandomAgent(aAgents);
-            countA = 0;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              key,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-            continue;
-          }
-
-          const random = Math.random();
-          if (random <= 0.7) {
-            enhancerCount++;
-            countA++;
-            countS++;
-            results.push({ agent: "enhancer" });
-          } else if (random <= 0.94) {
-            const selectedAgent = getRandomAgent(aAgents);
-            countA = 0;
-            countS++;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              key,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-          } else {
-            const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
-              agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
-            );
-            countS = 0;
-            countA++;
-            results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              key,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
-          }
-        }
-        await tx.assets.update({
-          where: { userKey: +key },
-          data: {
-            cash: { decrement: totalCost },
-            enhancer: { increment: enhancerCount },
-            countA: countA,
-            countS: countS,
-            mileage: { increment: totalMileage },
+        resJson = [
+          {
+            message: `성공적으로 챔피언 ${agent.name}(을)를 ${count}만큼 판매하였습니다.`,
+            amount: `+${amount}`,
           },
-        });
-
-        return results;
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        ];
       }
-    );
+    }
 
-    // Return success response
-    return res.status(200).json({
-      message: "갸챠 결과",
-      results,
+    // 남은 숫자가 0 이하인 챔피언 삭제
+    const deleteMyAgent = await prisma.myAgents.deleteMany({
+      where: { count: { lte: 0 }, userKey: +key },
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: error.message || "서버 오류" });
+
+    return res.status(200).json(resJson);
   }
-});
+);
+
+// 챔피언 뽑기
+router.patch(
+  "/users/:key/agents/gacha",
+  champVerification,
+  async (req, res, next) => {
+    try {
+      const { count } = req.body;
+      const { key } = req.params;
+      const pickUpAgent = req.agent;
+
+      if (!count || isNaN(+count) || count <= 0) {
+        throw new Error("뽑기 횟수는 양의 정수여야 합니다.");
+      }
+
+      if (pickUpAgent.grade !== "s") {
+        throw new Error(`해당 챔피언은 s급이 아닙니다.`);
+      }
+
+      const results = await prisma.$transaction(
+        async (tx) => {
+          const userAssets = await tx.assets.findUnique({
+            where: { userKey: +key },
+          });
+
+          if (!userAssets) {
+            throw new Error(" 유저의 지갑이 존재하지 않습니다.");
+          }
+
+          let enhancerCount = 0;
+          let countA = userAssets.countA;
+          let countS = userAssets.countS;
+          const results = [];
+          let totalCost = 0;
+          let totalMileage = 0;
+
+          //할인 적용
+          if (count >= 10) {
+            totalCost = count * 900;
+            totalMileage = count * 9;
+          } else {
+            totalCost = count * 1000;
+            totalMileage = count * 10;
+          }
+
+          if (userAssets.cash < totalCost) {
+            throw new Error("캐시가 부족합니다.");
+          }
+
+          const agents = await tx.agents.findMany({
+            select: {
+              agentKey: true,
+              team: true,
+              name: true,
+              grade: true,
+              position: true,
+            },
+          });
+
+          const aAgents = agents.filter((agent) => agent.grade === "a");
+          const sAgents = agents.filter((agent) => agent.grade === "s");
+
+          for (let i = 0; i < count; i++) {
+            if (countS === 50) {
+              const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
+                agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
+              );
+              countS = 0;
+              results.push({ agent: selectedAgent });
+              await updateMyAgentsTransaction(
+                tx,
+                key,
+                selectedAgent.agentKey,
+                selectedAgent.name
+              );
+              continue;
+            }
+
+            if (countA === 5) {
+              const selectedAgent = getRandomAgent(aAgents);
+              countA = 0;
+              results.push({ agent: selectedAgent });
+              await updateMyAgentsTransaction(
+                tx,
+                key,
+                selectedAgent.agentKey,
+                selectedAgent.name
+              );
+              continue;
+            }
+
+            const random = Math.random();
+            if (random <= 0.7) {
+              enhancerCount++;
+              countA++;
+              countS++;
+              results.push({ agent: "enhancer" });
+            } else if (random <= 0.94) {
+              const selectedAgent = getRandomAgent(aAgents);
+              countA = 0;
+              countS++;
+              results.push({ agent: selectedAgent });
+              await updateMyAgentsTransaction(
+                tx,
+                key,
+                selectedAgent.agentKey,
+                selectedAgent.name
+              );
+            } else {
+              const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
+                agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
+              );
+              countS = 0;
+              countA++;
+              results.push({ agent: selectedAgent });
+              await updateMyAgentsTransaction(
+                tx,
+                key,
+                selectedAgent.agentKey,
+                selectedAgent.name
+              );
+            }
+          }
+          await tx.assets.update({
+            where: { userKey: +key },
+            data: {
+              cash: { decrement: totalCost },
+              enhancer: { increment: enhancerCount },
+              countA: countA,
+              countS: countS,
+              mileage: { increment: totalMileage },
+            },
+          });
+
+          return results;
+        },
+        {
+          isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+        }
+      );
+
+      // Return success response
+      return res.status(200).json({
+        message: "갸챠 결과",
+        results,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ error: error.message || "서버 오류" });
+    }
+  }
+);
 
 // 챔피언 강화
-router.patch("/users/:key/agents/intensify", async (req, res) => {
-  const { key } = req.params;
-  const { agentKey } = req.body;
+router.patch(
+  "/users/:key/agents/intensify",
+  authMiddleware,
+  async (req, res) => {
+    const { key } = req.params;
+    const { agentKey } = req.body;
 
-  // 로그인 상태 확인
-  if (!checkLogin(req)) {
-    return res.status(401).json({ message: "로그인 부터 해주세요!!" });
-  }
+    // if (loggedInUserId !== key) {
+    //   return res.status(403).json({ message: "당신 계정이 아녀요!!" });
+    // }
 
-  const loggedInUserId = getUserId(req);
-  if (loggedInUserId !== key) {
-    return res.status(403).json({ message: "당신 계정이 아녀요!!" });
-  }
+    try {
+      // 보유 에이전트 확인
+      const player = await prisma.myAgents.findFirst({
+        where: { agentKey: +agentKey, userKey: +key },
+        include: {
+          agent: true, // 에이전트 정보 포함
+        },
+      });
+      console.log("확인1");
 
-  try {
-    // 보유 에이전트 확인
-    const player = await prisma.myAgents.findFirst({
-      where: { agentKey: agentKey, userKey: +key },
-      include: {
-        agent: true, // 에이전트 정보 포함
-      },
-    });
-
-    if (!player || player.userKey !== loggedInUserId) {
-      return res.status(404).json({ message: "보유하고 있는 선수가 아닙니다." });
-    }
-
-    const currentLevel = player.level;
-    if (currentLevel >= 15) {
-      return res.status(400).json({ message: "이미 15강입니다." });
-    }
-
-    // 보유 재료 확인
-    const materials = await prisma.assets.findUnique({
-      where: { userKey: loggedInUserId },
-    });
-
-    const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-    if (!checkMaterials(materials, requiredMaterials)) {
-      return res.status(400).json({ message: "강화 재료가 부족합니다." });
-    }
-
-    // 강화 시도 (고정 확률 성공 20% 실패 80%)
-    const success = Math.random() < 0.2; // 20% 확률
-    const nextLevel = success ? currentLevel + 1 : currentLevel;
-
-    // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
-    await prisma.$transaction(async (prisma) => {
-      if (success) {
-        await prisma.myAgents.update({
-          where: {
-            myAgentKey: player.myAgentKey,
-          },
-          data: { level: nextLevel },
-        });
-        // 강화 재료 차감 로직 추가
-        await deductMaterials(loggedInUserId, requiredMaterials);
+      if (!player || player.userKey !== +key) {
+        return res
+          .status(404)
+          .json({ message: "보유하고 있는 선수가 아닙니다." });
       }
-    });
 
-    // 강화 시도 완료 시 상태코드와 강화 결과 반환
-    const resultMessage = success ? "성공" : "실패";
-    return res.status(201).json({ message: `${currentLevel}강에서 ${nextLevel}강으로 강화가 ${resultMessage}했습니다!` });
+      const currentLevel = player.level;
+      if (currentLevel >= 15) {
+        return res.status(400).json({ message: "이미 15강입니다." });
+      }
 
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+      // 보유 재료 확인
+      const materials = await prisma.assets.findFirst({
+        where: { userKey: +key },
+      });
+      console.log("확인2");
+      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
+      if (!checkMaterials(materials, requiredMaterials)) {
+        return res.status(400).json({ message: "강화 재료가 부족합니다." });
+      }
+
+      // 강화 시도 (고정 확률 성공 20% 실패 80%)
+      const success = Math.random() < 0.2; // 20% 확률
+      const nextLevel = success ? currentLevel + 1 : currentLevel;
+      // level +ddd
+      // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
+      await prisma.$transaction(async (prisma) => {
+        if (success) console.log("확인3");
+        {
+          await prisma.myAgents.update({
+            where: {
+              myAgentKey: player.myAgentKey,
+            },
+            data: { level: nextLevel },
+          });
+          // 강화 재료 차감 로직 추가
+          await deductMaterials(+key, requiredMaterials);
+        }
+      });
+
+      // 강화 시도 완료 시 상태코드와 강화 결과 반환
+      const resultMessage = success ? "성공" : "실패";
+      return res.status(201).json({
+        message: `${currentLevel}강에서 ${nextLevel}강으로 강화가 ${resultMessage}했습니다!`,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    }
   }
-});
+);
+// 강화 재료 소진이 안됨
 
 // 챔피언 승급
-router.patch("/users/:key/agents/promote", async (req, res) => {
+router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
   const { key } = req.params;
   const { agentKey } = req.body;
 
-  // // 로그인 상태인지 확인
-  // if (!checkLogin(req)) {
-  //     return res.status(401).json({ message: "로그인 부터 해주세요!!" });
-  // }
-
   // 로그인 된 계정의 아이디가 아닌 경우 거절
-  const loggedInUserId = await prisma.users.findFirst({ where: { userKey: +key } })
-  // if (loggedInUserId !== key) { // key를 사용하여 비교
-  //     return res.status(403).json({ message: "당신 계정이 아녀요!!" });
-  // }
 
   try {
     // 보유 선수 확인
     const myAgent = await prisma.myAgents.findUnique({
-      where: { agentKey: agentKey, userKey: +key }
+      where: { agentKey: +agentKey, userKey: +key },
     });
 
     if (!myAgent) {
-      return res.status(404).json({ message: "보유하고 있는 선수가 아닙니다." });
+      return res
+        .status(404)
+        .json({ message: "보유하고 있는 선수가 아닙니다." });
     }
 
     // 이미 6단 선수 시 거부
-    if (myAgent.rank >= 6) {
+    if (myAgent.class >= 6) {
       return res.status(400).json({ message: "이미 6단 선수입니다." });
     }
 
@@ -441,35 +461,19 @@ router.patch("/users/:key/agents/promote", async (req, res) => {
 
     // 중복 보유 선수만 있다면 승급 처리
     const updatedAgent = await prisma.myAgents.update({
-      where: { agentKey: agentKey, userKey: +key },
+      where: { agentKey: +agentKey, userKey: +key },
       data: {
-        rank: { increment: 1 },
-        count: { decrement: 1 }
-      }
+        count: { decrement: 1 },
+        class: { increment: 1 },
+      },
     });
-
-    // 포지션 특화 능력치 10% 증가 
-    const originalStats = {
-      mainStat1: myAgent.mainStat1,
-      mainStat2: myAgent.mainStat2
-    };
-
-    const newStats = {
-      mainStat1: Math.floor(originalStats.mainStat1 * 1.1), // 10% 증가
-      mainStat2: Math.floor(originalStats.mainStat2 * 1.1)  // 10% 증가
-    };
 
     // 승급 완료 시 상태코드와 승급 결과 반환
     res.status(200).json({
       message: "승급 결과",
       result: updatedAgent,
       class: `${myAgent.class} ⇒ ${updatedAgent.class}`,
-      stat: {
-        mainStat1: `${originalStats.mainStat1} ⇒ ${newStats.mainStat1}`,
-        mainStat2: `${originalStats.mainStat2} ⇒ ${newStats.mainStat2}`
-      }
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "서버 오류가 발생했습니다." });
