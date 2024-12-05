@@ -377,7 +377,7 @@ router.patch(
       });
       console.log("확인1");
 
-      if (!player || player.userKey !== key) {
+      if (!player || player.userKey !== +key) {
         return res
           .status(404)
           .json({ message: "보유하고 있는 선수가 아닙니다." });
