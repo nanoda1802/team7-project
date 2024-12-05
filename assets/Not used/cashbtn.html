@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>캐쉬 충전</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 26px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>캐쉬 충전</h1>
+  <div class="container">
+    <button id="chargeButton">캐쉬 충전</button>
+  </div>
+
+  <script>
+    const chargeButton = document.getElementById('chargeButton');
+
+    // 캐쉬 충전 함수
+    async function chargeCash() {
+      try {
+        const userKey = 4;  // 사용자 키 (예시)
+        const response = await fetch(`http://localhost:9999/api/users/${userKey}/cash`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem("authToken")}` // 인증 토큰
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('충전 실패');
+        }
+        // 충전 성공 후 UI에서 추가 동작이 필요없다면 아무 것도 하지 않음
+      } catch (error) {
+        console.error('API 호출 오류:', error);
+        // 충전 실패 시 추가적인 동작 없이 오류 처리
+      }
+    }
+
+    // 버튼 클릭 시 캐쉬 충전 함수 호출
+    chargeButton.addEventListener('click', chargeCash);
+  </script>
+</body>
+</html>

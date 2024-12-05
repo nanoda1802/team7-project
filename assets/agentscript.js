@@ -37,7 +37,7 @@ updateSelect2Options();
 
 // 확인 버튼 클릭 시 동작
 confirmBtn.addEventListener('click', async () => {
-   const BASE_URL = 'http://localhost:3012/api';
+   const BASE_URL = 'http://localhost:9999/api';
     const option = `${showHow.value},${showWhat.value},${orderBy.value},${orderHow.value}`;
 
     try {
