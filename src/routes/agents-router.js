@@ -2,6 +2,7 @@ import express from "express";
 import { prisma } from "../utils/prisma/index.js";
 import { Prisma } from "@prisma/client";
 import champVerification from "../middlewares/agent-verify-middleware.js";
+import authMiddleware from "../middlewares/auth-middleware.js";
 
 const router = express.Router();
 
@@ -355,103 +356,90 @@ router.patch(
 );
 
 // 챔피언 강화
-router.patch("/users/:key/agents/intensify", async (req, res) => {
-  const { key } = req.params;
-  const { agentKey } = req.body;
+router.patch(
+  "/users/:key/agents/intensify",
+  authMiddleware,
+  async (req, res) => {
+    const { key } = req.params;
+    const { agentKey } = req.body;
 
-  // 로그인 상태 확인
-  // if (!checkLogin(req)) {
-  //   return res.status(401).json({ message: "로그인 부터 해주세요!!" });
-  // }
+    // if (loggedInUserId !== key) {
+    //   return res.status(403).json({ message: "당신 계정이 아녀요!!" });
+    // }
 
-  const loggedInUserId = getUserId(req);
-  // if (loggedInUserId !== key) {
-  //   return res.status(403).json({ message: "당신 계정이 아녀요!!" });
-  // }
+    try {
+      // 보유 에이전트 확인
+      const player = await prisma.myAgents.findFirst({
+        where: { agentKey: +agentKey, userKey: +key },
+        include: {
+          agent: true, // 에이전트 정보 포함
+        },
+      });
+      console.log("확인1");
 
-  try {
-    // 보유 에이전트 확인
-    const player = await prisma.myAgents.findFirst({
-      where: { agentKey: agentKey, userKey: +key },
-      include: {
-        agent: true, // 에이전트 정보 포함
-      },
-    });
-
-    if (!player || player.userKey !== loggedInUserId) {
-      return res
-        .status(404)
-        .json({ message: "보유하고 있는 선수가 아닙니다." });
-    }
-
-    const currentLevel = player.level;
-    if (currentLevel >= 15) {
-      return res.status(400).json({ message: "이미 15강입니다." });
-    }
-
-    // 보유 재료 확인
-    const materials = await prisma.assets.findUnique({
-      where: { userKey: loggedInUserId },
-    });
-
-    const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-    if (!checkMaterials(materials, requiredMaterials)) {
-      return res.status(400).json({ message: "강화 재료가 부족합니다." });
-    }
-
-    // 강화 시도 (고정 확률 성공 20% 실패 80%)
-    const success = Math.random() < 0.2; // 20% 확률
-    const nextLevel = success ? currentLevel + 1 : currentLevel;
-
-    // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
-    await prisma.$transaction(async (prisma) => {
-      if (success) {
-        await prisma.myAgents.update({
-          where: {
-            myAgentKey: player.myAgentKey,
-          },
-          data: { level: nextLevel },
-        });
-        // 강화 재료 차감 로직 추가
-        await deductMaterials(loggedInUserId, requiredMaterials);
+      if (!player || player.userKey !== key) {
+        return res
+          .status(404)
+          .json({ message: "보유하고 있는 선수가 아닙니다." });
       }
-    });
 
-    // 강화 시도 완료 시 상태코드와 강화 결과 반환
-    const resultMessage = success ? "성공" : "실패";
-    return res
-      .status(201)
-      .json({
+      const currentLevel = player.level;
+      if (currentLevel >= 15) {
+        return res.status(400).json({ message: "이미 15강입니다." });
+      }
+
+      // 보유 재료 확인
+      const materials = await prisma.assets.findFirst({
+        where: { userKey: +key },
+      });
+      console.log("확인2");
+      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
+      if (!checkMaterials(materials, requiredMaterials)) {
+        return res.status(400).json({ message: "강화 재료가 부족합니다." });
+      }
+
+      // 강화 시도 (고정 확률 성공 20% 실패 80%)
+      const success = Math.random() < 0.2; // 20% 확률
+      const nextLevel = success ? currentLevel + 1 : currentLevel;
+
+      // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
+      await prisma.$transaction(async (prisma) => {
+        if (success) console.log("확인3");
+        {
+          await prisma.myAgents.update({
+            where: {
+              myAgentKey: player.myAgentKey,
+            },
+            data: { level: nextLevel },
+          });
+          // 강화 재료 차감 로직 추가
+          await deductMaterials(+key, requiredMaterials);
+        }
+      });
+
+      // 강화 시도 완료 시 상태코드와 강화 결과 반환
+      const resultMessage = success ? "성공" : "실패";
+      return res.status(201).json({
         message: `${currentLevel}강에서 ${nextLevel}강으로 강화가 ${resultMessage}했습니다!`,
       });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    }
   }
-});
+);
 
 // 챔피언 승급
-router.patch("/users/:key/agents/promote", async (req, res) => {
+router.patch("/users/:key/agents/promote", authMiddleware, async (req, res) => {
   const { key } = req.params;
   const { agentKey } = req.body;
 
-  // // 로그인 상태인지 확인
-  // if (!checkLogin(req)) {
-  //     return res.status(401).json({ message: "로그인 부터 해주세요!!" });
-  // }
-
   // 로그인 된 계정의 아이디가 아닌 경우 거절
-  const loggedInUserId = await prisma.users.findFirst({
-    where: { userKey: +key },
-  });
-  // if (loggedInUserId !== key) { // key를 사용하여 비교
-  //     return res.status(403).json({ message: "당신 계정이 아녀요!!" });
-  // }
 
   try {
     // 보유 선수 확인
     const myAgent = await prisma.myAgents.findUnique({
-      where: { agentKey: agentKey, userKey: +key },
+      where: { myAgentKey: +agentKey, userKey: +key },
     });
 
     if (!myAgent) {
@@ -472,10 +460,10 @@ router.patch("/users/:key/agents/promote", async (req, res) => {
 
     // 중복 보유 선수만 있다면 승급 처리
     const updatedAgent = await prisma.myAgents.update({
-      where: { agentKey: agentKey, userKey: +key },
+      where: { myAgentKey: +agentKey, userKey: +key },
       data: {
-        rank: { increment: 1 },
-        count: { decrement: 1 },
+        level: { increment: 1 },
+        class: { decrement: 1 },
       },
     });
 

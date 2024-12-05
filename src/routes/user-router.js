@@ -35,12 +35,10 @@ router.post("/sign-up", async (req, res) => {
 
     // 비밀번호 유효성 검증
     if (!pw || !pwRegex.test(pw))
-      return res
-        .status(400)
-        .json({
-          errorMessage:
-            "비밀번호는 영어 소문자, 숫자, 특수기호 하나 이상 혼합하여 6자 이상으로 작성해주세요",
-        });
+      return res.status(400).json({
+        errorMessage:
+          "비밀번호는 영어 소문자, 숫자, 특수기호 하나 이상 혼합하여 6자 이상으로 작성해주세요",
+      });
 
     // 비밀번호 확인 입력 여부 검증
     if (!pwCheck)
