@@ -178,6 +178,7 @@
   <div class="popup" id="popup">
     <div class="popup-header" id="popup-name">카드 이름</div>
     <div class="popup-body">
+      <p>Grade: <span id="popup-grade">등급</span></p>
       <p>Class: <span id="popup-class">클래스</span></p>
       <p>Count: <span id="popup-count">카운트</span></p>
       <p>Level: <span id="popup-level">레벨</span></p>
@@ -216,7 +217,7 @@ const BASE_URL ='http://localhost:9999/api';
         const card = document.createElement('div');
         card.classList.add('card');
         card.innerHTML = `
-          <div class="card-header">${agent.name}</div>
+          <div class="card-header">LV${agent.level} ${agent.name}</div>
           <div class="card-body">
             <span>${agent.agent.grade}</span>
           </div>
@@ -237,8 +238,10 @@ const BASE_URL ='http://localhost:9999/api';
   }
   
   function updatePopupContent(agent) {
+    console.log(agent);
   document.getElementById('popup-name').textContent = agent.name;
-  document.getElementById('popup-class').textContent = agent.agent.grade;
+  document.getElementById('popup-grade').textContent = agent.agent.grade;
+  document.getElementById('popup-class').textContent = agent.class;
   document.getElementById('popup-count').textContent = agent.count;
   document.getElementById('popup-level').textContent = agent.level;
 }
@@ -249,7 +252,8 @@ const BASE_URL ='http://localhost:9999/api';
     
     // 팝업 내용 설정
     document.getElementById('popup-name').textContent = agent.name;
-    document.getElementById('popup-class').textContent = agent.agent.grade;
+    document.getElementById('popup-grade').textContent = agent.agent.grade;
+    document.getElementById('popup-class').textContent = agent.class;
     document.getElementById('popup-count').textContent = agent.count;
     document.getElementById('popup-level').textContent = agent.level;
 
@@ -270,7 +274,6 @@ const BASE_URL ='http://localhost:9999/api';
 
   // API 호출 함수들
   async function handleUpgrade(agentKey) {
-  console.log(agentKey);
   try {
     const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
       method: 'PATCH',
@@ -281,7 +284,7 @@ const BASE_URL ='http://localhost:9999/api';
       body: JSON.stringify({ agent: agentKey }),
     });
 
-    if (!response.ok) throw new Error('강화에 실패했습니다.');
+    if (!response.ok) throw new Error('강화 중 오류가 발생했습니다.');
 
     const result = await response.json();
 
@@ -292,7 +295,7 @@ const BASE_URL ='http://localhost:9999/api';
     남은 재료: ${result.currentMaterials}`);
 
     // 서버에서 새로운 에이전트 데이터를 받아 팝업 업데이트
-    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents`, {
+    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
       method: 'GET',
       headers: { 
         "Content-Type": "application/json",
@@ -307,14 +310,18 @@ const BASE_URL ='http://localhost:9999/api';
     // 팝업 업데이트
     updatePopupContent(updatedAgent.data);
 
+    const cardContainer = document.getElementById('card-container');
+    cardContainer.innerHTML = ''; // 기존 내용 제거
+    loadAgents();
+
   } catch (error) {
     console.error(error);
     alert('강화 중 오류가 발생했습니다.');
   }
 }
 
-  async function handlePromotion(agent) {
-    console.log(agent);
+  async function handlePromotion(agentKey) {
+    console.log(agentKey);
     try {
       const response = await fetch(`${BASE_URL}/users/agents/promote`, {
         method: 'PATCH',
@@ -322,12 +329,37 @@ const BASE_URL ='http://localhost:9999/api';
             "Content-Type": "application/json",
             "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
           },
-        body: JSON.stringify({ agent: agent}),
+        body: JSON.stringify({ agent: agentKey}),
       });
 
-      if (!response.ok) throw new Error('승급에 실패했습니다.');
-      alert('승급 성공!');
-      closePopup();
+      if (!response.ok) throw new Error('승급 중 오류가 발생했습니다.');
+
+      const result = await response.json();
+
+    // 승급 성공 메시지
+    alert(`메시지: ${result.message}
+    성공 확률: ${result.result}
+    남은 재료: ${result.class}`);
+
+    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
+      method: 'GET',
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+      }
+    });
+
+    if (!updatedAgentResponse.ok) throw new Error('강화 후 데이터를 가져오는 데 실패했습니다.');
+
+    const updatedAgent = await updatedAgentResponse.json();
+
+    // 팝업 업데이트
+    updatePopupContent(updatedAgent.data);
+
+    const cardContainer = document.getElementById('card-container');
+    cardContainer.innerHTML = ''; // 기존 내용 제거
+    loadAgents();
+
     } catch (error) {
       console.error(error);
       alert('승급 중 오류가 발생했습니다.');

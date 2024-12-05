@@ -95,6 +95,33 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
     .json({ data: showMyAgents });
 });
 
+// 한개만 보내기.
+router.get("/users/agents/:agentKey", authMiddleware, async (req, res, next) => {
+  const { user } = req
+  const agentKey = req.params.agentKey;
+
+  const showMyAgents = await prisma.myAgents.findFirst({
+    where: { agentKey: +agentKey, userKey: user.userKey },
+    select: {
+      agentKey: true,
+      name: true,
+      class: true,
+      level: true,
+      count: true,
+      agent: {
+        select: {
+          team: true,
+          position: true,
+          grade: true,
+        },
+      },
+    },
+  });
+
+  return res
+    .status(200)
+    .json({ data: showMyAgents });
+});
 
 // 챔피언 매각
 // 챔피언 매각
@@ -254,15 +281,14 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
           let countS = userAssets.countS;
           const results = [];
           let totalCost = 0;
-          let totalMileage = 0;
-
+          
           //할인 적용
           if (count >= 10) {
             totalCost = count * 900;
-            totalMileage = count * 9;
+           
           } else {
             totalCost = count * 1000;
-            totalMileage = count * 10;
+            
           }
 
           if (userAssets.cash < totalCost) {
@@ -350,7 +376,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
               enhancer: { increment: enhancerCount },
               countA: countA,
               countS: countS,
-              mileage: { increment: totalMileage },
             },
           });
 
@@ -474,7 +499,7 @@ router.patch(
 
     try {
       // 보유 선수 확인
-      const myAgent = await prisma.myAgents.findUnique({
+      const myAgent = await prisma.myAgents.findFirst({
         where: { agentKey: agent.agentKey, userKey: user.userKey },
       });
 
@@ -496,7 +521,7 @@ router.patch(
 
       // 중복 보유 선수만 있다면 승급 처리
       const updatedAgent = await prisma.myAgents.update({
-        where: { agentKey: agent.agentKey, userKey: user.userKey },
+        where: { myAgentKey: myAgent.myAgentKey, },
         data: {
           count: { decrement: 1 },
           class: { increment: 1 },
