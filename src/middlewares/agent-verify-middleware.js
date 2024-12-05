@@ -1,6 +1,6 @@
 import { prisma } from "../utils/prisma/index.js";
 
-//이거 쓸때 키 이름을 pickup 아니면 agent쓰기.
+// 챔피언 유효성 평가 미들웨어
 const champVerification = async function (req, res, next) {
     try {
         const agentValues = req.body
@@ -10,7 +10,7 @@ const champVerification = async function (req, res, next) {
             const agents = [];
             if (agentValues?.formation) {
                 for (let agentKey of agentValues.formation) {
-                    if (!Number.isInteger(+agentKey)) return res
+                    if (isNaN(+agentKey)) return res
                         .status(400)
                         .json({ errorMessage: "선택할 챔피언의 <agent_key>를 숫자로 입력해주세요" })
                         console.log("0");
@@ -24,7 +24,7 @@ const champVerification = async function (req, res, next) {
             // 일반 배열
             } else {
                 for (let { agent } of agentValues) {
-                    if (!Number.isInteger(+agent)) return res
+                    if (isNaN(+agent)) return res
                         .status(400)
                         .json({ errorMessage: "선택할 챔피언의 <agent_key>를 숫자로 입력해주세요" })
 
@@ -39,9 +39,9 @@ const champVerification = async function (req, res, next) {
             // 챔프 값 반환
             req.agent = agents;
         } else {
-            const agentKey = +agentValues?.pickup || +agentValues?.agent 
-            console.log(agentKey);
-            if (!agentKey || !Number.isInteger(agentKey)) return res
+            const agentKey = +agentValues?.pickup || +agentValues?.agent
+            // 입력값 확인
+            if (!agentKey || isNaN(+agentKey)) return res
                 .status(400)
                 .json({ errorMessage: "선택할 챔피언의 <agent_key>를 숫자로 입력해주세요" })
 

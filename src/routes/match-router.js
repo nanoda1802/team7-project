@@ -1,4 +1,5 @@
 import express from "express";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../utils/prisma/index.js";
 import authMiddleware from '../middlewares/auth-middleware.js';
 import champVerification from "../middlewares/agent-verify-middleware.js"
@@ -65,7 +66,7 @@ const checkSquadScore = async (user) => {
 };
 
 /* 친선전 API */
-router.post("/users/:key/select-match", authMiddleware, async (req, res, next) => {
+router.post("/users/select-match", authMiddleware, async (req, res, next) => {
   // 인증 미들웨어 거쳐서도 내 키 받음
   const { counterpart } = req.body; // body에서 상대방 아이디 수령
   // [검사 authMW] : 로그아웃 상태면 거부
@@ -112,13 +113,13 @@ router.post("/users/:key/select-match", authMiddleware, async (req, res, next) =
 });
 
 /* 정규전 API */
-router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => {
-  const { key } = req.params; // 매개 경로변수에서 내 userKey 받음
+router.post("/users/rank-match", authMiddleware, async (req, res, next) => {
+  const { user } = req;
   // 인증 미들웨어 거쳐서도 내 키 받음
   // [검사 authMW] : 로그아웃 상태면 거부
   // [검사 authMW] : 로그인 정보와 아이디 불일치 시 거부
   // [검사 01] : 팀편성 안 됐을 시 거부
-  const { squadMem1, squadMem2, squadMem3 } = req.user
+  const { squadMem1, squadMem2, squadMem3 } = user
   if (!(squadMem1 && squadMem2 && squadMem3)) return res
     .status(401)
     .json({ message: "팀편성부터 하세요라!!" });
@@ -126,7 +127,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
   // [1] 매치 메이킹
   // [1-1] 내 계정 mmr 찾기
   const { mmr: myMatchRank } = await prisma.ranks.findFirst({
-    where: { userKey: +key },
+    where: { userKey: user.userKey },
     select: { mmr: true },
   });
   // [1-2] 내 mmr 그룹 찾기
@@ -141,7 +142,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
   });
   // [1-3] mmr 그룹에서 본인과 팀편성 미비 유저 제외하고 다시 그루핑? 하츄핑?
   // [1-3-1] 팀편성이 돼있고, 내 계정이 아닌 경우만 살려줌
-  const myRankGroup = matchRanks.filter((e) => e.user.squadMem1 && e.user.squadMem2 && e.user.squadMem3 && e.user.userKey !== key)
+  const myRankGroup = matchRanks.filter((e) => e.user.squadMem1 && e.user.squadMem2 && e.user.squadMem3 && e.user.userKey !== user.userKey)
   
   if (!myRankGroup) return res
     .status(404)
@@ -160,11 +161,11 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
   const win = Math.round(myScore / (myScore + counterScore) * 100)
 
   if (score < win) {
-    await updateData(req.user.userKey, counterUser.userKey)
+    await updateData(user.userKey, counterUser.userKey)
     matchResult = "승리!!";
     
   } else if (score > win) {
-    await updateData(counterUser.userKey, req.user.userKey)
+    await updateData(counterUser.userKey, user.userKey)
     matchResult = "패배!!";
   } else {
     // [3] 비겼을 때
@@ -173,7 +174,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
     await prisma.$transaction(async (tx) => {
       await tx.ranks.updateMany({
         where: {
-          userKey: { in: [+key, counterUser.userKey] }
+          userKey: { in: [user.userKey, counterUser.userKey] }
         },
         data: {
           drawCount: { increment: 1 },
@@ -182,7 +183,7 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
       });
       await tx.assets.updateMany({
         where: {
-          userKey: { in: [+key, counterUser.userKey] }
+          userKey: { in: [user.userKey, counterUser.userKey] }
         },
         data: {
           enhancer: { increment: 5 },
@@ -190,6 +191,8 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
         }
       });
 
+    },{
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     })
     matchResult = "무승부!!";
   }
@@ -245,6 +248,8 @@ router.post("/users/:key/rank-match", authMiddleware, async (req, res, next) => 
           }
         },
       });
+    },{
+      isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
     });
 
     return 
@@ -297,16 +302,15 @@ router.get('/users/ranks', async (req, res, next) => {
 })
 
 // 팀편성 API
-router.put('/users/:key/formation', champVerification, async (req, res, next) => {
+router.put('/users/formation', authMiddleware, champVerification, async (req, res, next) => {
   const { formation } = req.body;
-  const { key } = req.params;
+  const { user, agent } = req
   // 유효성 평가 미들웨어로 챔피언 배열 받아옴
-  const agent = req.agent
   let myAgent = [];
   let tank = false;
 
   for (let i = 0; i < formation.length; i++) {
-    myAgent[i] = await prisma.myAgents.findFirst({ where: { agentKey: +formation[i], userKey: +key } })
+    myAgent[i] = await prisma.myAgents.findFirst({ where: { agentKey: +formation[i], userKey: user.userKey } })
     //보유 챔피언 확인
     if (!myAgent[i]) return res
       .status(400)
@@ -336,7 +340,7 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
 
   // 저장
   const updateUser = await prisma.users.update({
-    where: { userKey: +key },
+    where: { userKey: user.userKey },
     data: {
       squadMem1: +myAgent[0].agentKey,
       squadMem2: +myAgent[1].agentKey,
@@ -358,11 +362,10 @@ router.put('/users/:key/formation', champVerification, async (req, res, next) =>
 })
 
 //대표 챔피언 설정 API
-router.patch('/users/:key/favorite', champVerification, async (req, res, next) => {
-  const { agent } = req
-  const { key } = req.params;
+router.patch('/users/favorite', authMiddleware, champVerification, async (req, res, next) => {
+  const { agent,user } = req
 
-  const myAgent = await prisma.myAgents.findFirst({ where: { agentKey: +agent.agentKey, userKey: +key } })
+  const myAgent = await prisma.myAgents.findFirst({ where: { agentKey: +agent.agentKey, userKey: user.userKey } })
   // 보유 챔피언 확인
   if (!myAgent) return res
     .status(400)
@@ -370,7 +373,7 @@ router.patch('/users/:key/favorite', champVerification, async (req, res, next) =
 
   // 저장
   const updateUser = await prisma.users.update({
-    where: { userKey: +key },
+    where: { userKey: user.userKey },
     data: {
       favoriteAgent: +myAgent.agentKey,
     }
