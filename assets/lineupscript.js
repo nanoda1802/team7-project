@@ -3,8 +3,8 @@ const BASE_URL = 'http://localhost:9999/api';
     const userKey = 3;
 
     // 상태 관리 변수
-    let isTeamSelectionMode = false;
-    let isRepresentativeSelectionMode = false;
+    let isTeamSelectionMode = false; //팀모드
+    let isRepresentativeSelectionMode = false;//대표지정
     let selectedTeam = [];
     let selectedRepresentative = null;
 
