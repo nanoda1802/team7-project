@@ -65,11 +65,6 @@ const checkSquadScore = async (user) => {
   return Math.trunc(squadScore);
 };
 
-/* 경기 결과 적용 */
-const applyMatchResult = async (matchResult, winner, loser) => {
-  
-};
-
 /* 친선전 API */
 router.post("/users/:key/select-match", authMiddleware, async (req, res, next) => {
   // 인증 미들웨어 거쳐서도 내 키 받음
