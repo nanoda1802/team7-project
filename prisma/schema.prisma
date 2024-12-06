@@ -89,6 +89,7 @@ model MyAgents {
   user       Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
 
   @@id([userKey, agentKey])
+  @@index([agentKey], map: "MyAgents_agent_key_fkey")
   @@map("MyAgents")
 }
 
