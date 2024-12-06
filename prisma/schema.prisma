@@ -78,7 +78,6 @@ model Stats {
 }
 
 model MyAgents {
-  myAgentKey Int      @id @default(autoincrement()) @map("my_agent_key")
   userKey    Int      @map("user_key")
   agentKey   Int      @map("agent_key")
   name       String   @map("name")
@@ -89,8 +88,7 @@ model MyAgents {
   agent      Agents   @relation(fields: [agentKey], references: [agentKey], onDelete: Cascade)
   user       Users    @relation(fields: [userKey], references: [userKey], onDelete: Cascade)
 
-  @@index([agentKey], map: "MyAgents_agent_key_fkey")
-  @@index([userKey], map: "MyAgents_user_key_fkey")
+  @@id([userKey, agentKey])
   @@map("MyAgents")
 }
 

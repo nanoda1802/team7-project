@@ -130,10 +130,8 @@ router.post("/sign-in", async (req, res) => {
       process.env.SECRET_KEY, // 비밀 키를 사용하여 서명
       { expiresIn: "1h" } // 토큰 유효 기간을 1시간으로 설정
     );
-
     // 성공 시 헤더에 authorization 토큰 추가
     res.setHeader("authorization", `Bearer ${token}`);
-
     // 로그인 성공 메시지와 사용자 키 반환
     return res.status(200).json({
       message: "로그인 되었습니다",
@@ -152,26 +150,37 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
     // 변수 선언
     const { amount } = req.body;
 
-    if (isNaN(+amount) || amount <= 0) {
-      return res.status(400).json({ message: "유효한 금액을 입력해주세요." });
-    }
+    if (isNaN(+amount) || amount <= 0) return res
+      .status(400)
+      .json({ message: "유효한 금액을 입력해주세요." });
+
+    const mileage = Math.trunc(amount / 100)
 
     await prisma.assets.update({
       where: { userKey: user.userKey },
       data: {
         cash: { increment: amount },
-        mileage: { increment: 100 },
+        mileage: { increment: mileage },
       },
     });
-    return res.status(200).json({ message: `${amount}만큼 충전되었습니다.` });
+
+    return res
+      .status(200)
+      .json({ 
+        message: `${amount}만큼 충전되었습니다.`,
+        amount,
+        mileage
+      });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "서버 오류가 발생했습니다" });
   }
 });
 
 // 보유 재화 조회
-router.get("/users/assets", authMiddleware, async (req, res, naxt) => {
+router.get("/users/assets", authMiddleware, async (req, res, next) => {
   try {
     const { user } = req;
     const assets = await prisma.assets.findFirst({
