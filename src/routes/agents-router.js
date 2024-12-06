@@ -69,6 +69,7 @@ router.post("/agents", async (req, res, next) => {
         team: true,
         position: true,
         grade: true,
+        url:true,
       },
       orderBy: [orderByCondition], // 동적으로 생성된 orderBy 조건 사용
     });
@@ -97,6 +98,7 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
           team: true,
           position: true,
           grade: true,
+          url: true,
         },
       },
     },
@@ -123,6 +125,7 @@ router.get("/users/agents/:agentKey", authMiddleware, async (req, res, next) => 
             team: true,
             position: true,
             grade: true,
+            url: true,
           },
         },
       },
@@ -303,6 +306,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
           name: true,
           grade: true,
           position: true,
+          url: true,
         },
       });
       if (!agents) return res

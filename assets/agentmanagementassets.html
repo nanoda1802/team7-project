@@ -8,14 +8,15 @@
   <style>
 
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
+      font-family: "Noto Sans KR", sans-serif;
+      background-color: #f4f4f9;
       margin: 0;
-      padding: 20px;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      align-items: center; /* 중앙 정렬 */
+      align-items: center;
       justify-content: flex-start;
+      min-height: 100vh;
     }
 
     h1 {
@@ -55,107 +56,88 @@
     tr:nth-child(even) {
       background-color: #f9f9f9;
     }
+    .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%; /* 화면 너비의 90%를 차지 */
+  max-width: 1200px; /* 최대 너비 제한 */
+  margin: 20px auto;
+}
+
 
     #card-container {
       display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin: 20px auto;
-      width: 80%;
-      height: 425px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background-color: #fff;
-      padding: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+  flex-wrap: wrap;
+  gap: 20px; /* 카드 간 간격 */
+  justify-content: center;
+  width: 100%; /* 부모 컨테이너 너비에 맞춤 */
+  max-height: 330px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px; /* 내부 여백 */
+}
+
 
 
   /* 카드 레이아웃 */
   .card-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    justify-content: center;
-  }
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+      }
 
-  .card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    width: 120px;
-    height: 180px;
-    border: 2px solid #adb5bd;
-    border-radius: 10px;
-    background-color: #ffffff; /* 흰색 배경 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
-    padding: 10px;
-    text-align: center;
-    transition: transform 0.3s ease;
-  }
+.card {
+  width: 250px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 20px;
+}
 
-  .card:hover {
-    transform: translateY(-5px); /* hover 시 위로 살짝 올라감 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  }
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
 
-  /* 카드 상단 */
-  .card-header {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #212529;
-    font-family: "Noto Sans KR", sans-serif;
-  }
+/* 카드 이미지 */
+.card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
 
-  /* 카드 본문 */
-  .card-body {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    color: #495057;
-  }
+/* 카드 내용 */
+.card-content {
+  padding: 15px;
+}
 
-  /* 카드 하단 */
-  .card-footer {
-    font-size: 12px;
-    font-family: "Noto Sans KR", sans-serif;
-  }
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
 
-  .team {
-    font-size: 0.9em;
-    color: #666;
-    margin: 5px 0;
-  }
+.card-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
   
   .stars {
     color: #ffc107; /* 별 색상 */
     font-size: 14px;
     margin-bottom: 3px;
-  }
-
-  .position {
-    font-size: 12px;
-    color: #6c757d; /* 포지션 색상 */
-  }
-
-  /* 재화 표시 */
-  .resources {
-    width: 90%;
-    background-color: #ffffff;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 18px;
-    color: #343a40;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    font-family: "Noto Sans KR", sans-serif;
   }
 
     .button-container {
@@ -593,15 +575,12 @@
           const card = document.createElement('div');
           card.classList.add('card');
           card.innerHTML = `
-            <div class="card-header"> LV ${agent.level} ${agent.name}</div>
-            <div class="card-body">
-               <span class="grade">${agent.agent.grade}</span>
-            </div>
-            <div class="card-footer">
-              <div class="stars">${'★'.repeat(agent.class)}</div>
-              <div class="team">${agent.agent.team}</div>
-              <div class="position">포지션: ${agent.agent.position}</div>
-            </div>
+            <img src="${agent.agent.url}" alt="${agent.name}" class="card-image" />
+        <div class="card-content">
+          <div class="stars">${'★'.repeat(agent.class)}</div>
+          <h2 class="card-title">LV ${agent.level} ${agent.name} ${agent.agent.grade}급</h2>
+          <p class="card-description">포지션: ${agent.agent.position}<br>팀: ${agent.agent.team}</p>
+        </div>
           `;
 
           card.addEventListener("click", () => handleCardClick(card, agent));
@@ -868,8 +847,9 @@ async function fetchAssets() {
 document.getElementById('popup-overlay').addEventListener('click', closePopup);
 
 
-fetchUserInfo()
+fetchUserInfo();
 loadAgents();
+fetchAssets();
     
 </script>
 

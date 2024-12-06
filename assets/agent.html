@@ -90,86 +90,69 @@
     /* 카드 영역 */
     .card-container {
       margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  width: 80%;
+  height: 330px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card-grid {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       gap: 15px;
-      margin: 20px auto;
-      width: 80%;
-      height: 200px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      background-color: #fff;
-      padding: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+      margin-bottom: 20px;
+      justify-content: center;
+      }
 
-    .card-grid {
-        display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
-    justify-content: center;
-    }
+.card {
+  width: 250px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 20px;
+}
 
-    .card {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    width: 120px;
-    height: 180px;
-    border: 2px solid #adb5bd;
-    border-radius: 10px;
-    background-color: #ffffff; /* 흰색 배경 */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
-    padding: 10px;
-    text-align: center;
-    transition: transform 0.3s ease;
-  }
+/* 카드 호버 효과 */
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
 
-  .card:hover {
-    transform: translateY(-5px); /* hover 시 위로 살짝 올라감 */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-  }
+/* 카드 이미지 */
+.card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
 
-  /* 카드 상단 */
-  .card-header {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #212529;
-    font-family: "Noto Sans KR", sans-serif;
-  }
+/* 카드 내용 */
+.card-content {
+  padding: 15px;
+}
 
-  /* 카드 본문 */
-  .card-body {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 12px;
-    color: #495057;
-  }
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
 
-  /* 카드 하단 */
-  .card-footer {
-    font-size: 12px;
-    font-family: "Noto Sans KR", sans-serif;
-  }
-
-  .stars {
-    color: #ffc107; /* 별 색상 */
-    font-size: 14px;
-    margin-bottom: 3px;
-  }
-
-  .position {
-    font-size: 12px;
-    color: #6c757d; /* 포지션 색상 */
-  }
-
+.card-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
   </style>
 </head>
 <body>
@@ -281,14 +264,12 @@
           const card = document.createElement('div');
           card.classList.add('card');
           card.innerHTML = `
-            <div class="card-header">${agent.name}</div>
-            <div class="card-body">
-              <span>${agent.grade}</span>
-            </div>
-            <div class="card-footer">
-              <div class="position">포지션: ${agent.position}</div>
-            </div>
-          `;
+           <img src="${agent.url}" alt="${agent.name}" class="card-image" />
+        <div class="card-content">
+          <h2 class="card-title">${agent.name} ${agent.grade}급</h2>
+          <p class="card-description">포지션: ${agent.position}<br>팀: ${agent.team}</p>
+        </div>
+      `;
           cardContainer.appendChild(card);
         });
       } catch (err) {
