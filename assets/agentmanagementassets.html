@@ -1,860 +1,854 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>카드 관리</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>카드 관리</title>
 
-  <style>
-
-    body {
-      font-family: "Noto Sans KR", sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-    }
-
-    h1 {
-      font-size: 2rem;
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    table {
-      width: 60%;
-      margin: 0 auto;
-      border-collapse: collapse;
-      background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    th, td {
-      padding: 15px;
-      border: 1px solid #ddd;
-      text-align: center;
-      font-size: 18px;
-      width: 33.3333333333%;
-    }
-
-    th {
-      background-color: #007bff;
-      color: white;
-      font-weight: bold;
-    }
-
-    td {
-      color: #555;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
-    .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 90%; /* 화면 너비의 90%를 차지 */
-  max-width: 1200px; /* 최대 너비 제한 */
-  margin: 20px auto;
-}
-
-
-    #card-container {
-      display: flex;
-  flex-wrap: wrap;
-  gap: 20px; /* 카드 간 간격 */
-  justify-content: center;
-  width: 100%; /* 부모 컨테이너 너비에 맞춤 */
-  max-height: 55vh;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px; /* 내부 여백 */
-}
-
-
-
-  /* 카드 레이아웃 */
-  .card-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 20px;
-      justify-content: center;
+    <style>
+      body {
+        font-family: "Noto Sans KR", sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
       }
 
-.card {
-  width: 250px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  text-align: center;
-  cursor: pointer;
-  height: 350px;
-  margin-top: 20px;
-}
+      h1 {
+        font-size: 2rem;
+        color: #333;
+        margin-bottom: 10px;
+      }
 
-.card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* 카드 이미지 */
-.card-image {
-  width: 100%;
-  height: 250px;
-  object-position: center top;
-  object-fit: cover;
-}
-
-/* 카드 내용 */
-.card-content {
-  margin: 10px
-}
-
-.card-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  margin-top: auto;
-  margin-bottom: 10px;
-}
-
-.card-description {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.5;
-}
-  
-  .stars {
-    color: #ffc107; /* 별 색상 */
-    font-size: 14px;
-    margin-bottom: 3px;
-  }
-
-    .button-container {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .select-mode {
-      background-color: #007bff;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    .select-mode:hover {
-      background-color: #0056b3;
-    }
-
-    .selected-team {
-      background-color: rgba(0, 0, 0, 0.2); /* 어두운 배경 */
-    }
-
-    .selected-representative {
-      background-color: rgba(255, 165, 0, 0.4); /* 주황색 배경 */
-    }
-
-    .disabled {
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    .popup {
-      display: none;
-      position: fixed;
-      flex-direction: column;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 400px;
-      padding: 20px;
-      background-color: #fff;
-      border-radius: 10px;
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      
-    }
-
-    .popup .popup-header {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #212529;
-      margin-bottom: 20px;
-     display: flex;
-     flex-direction: column;
-     justify-content: center;
-    align-items: center;
-     text-align: center; 
-    }
-
-    .popup .popup-body {
+      table {
+        width: 60%;
+        margin: 0 auto;
+        border-collapse: collapse;
+        background: #ffffff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
         margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center; 
-    }
+      }
 
-    .popup .popup-footer {
-      display: flex;
-      justify-content: space-between;
-      padding-right: 50px;
-      padding-left: 50px;
-    }
+      th,
+      td {
+        padding: 15px;
+        border: 1px solid #ddd;
+        text-align: center;
+        font-size: 18px;
+        width: 33.3333333333%;
+      }
 
-    .popup button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      margin: 0;
-    }
+      th {
+        background-color: #007bff;
+        color: white;
+        font-weight: bold;
+      }
 
+      td {
+        color: #555;
+      }
 
-    .popup button:hover {
-      background-color: #0056b3;
-    }
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 90%; /* 화면 너비의 90%를 차지 */
+        max-width: 1200px; /* 최대 너비 제한 */
+        margin: 20px auto;
+      }
 
-    .popup-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
+      #card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px; /* 카드 간 간격 */
+        justify-content: center;
+        width: 100%; /* 부모 컨테이너 너비에 맞춤 */
+        max-height: 55vh;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px; /* 내부 여백 */
+      }
 
-    .count-popup {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 300px;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  display: none;
-}
+      /* 카드 레이아웃 */
+      .card-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        justify-content: center;
+      }
 
-/* 팝업 내부 콘텐츠 */
-.count-popup-body {
-  padding: 20px;
-  text-align: center;
-}
+      .card {
+        width: 250px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
+        text-align: center;
+        cursor: pointer;
+        height: 350px;
+        margin-top: 20px;
+      }
 
-/* 입력 필드 스타일 */
-#sell-count {
-  width: 80%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-}
+      .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      }
 
-/* 팝업 버튼 컨테이너 */
-.count-popup-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
+      /* 카드 이미지 */
+      .card-image {
+        width: 100%;
+        height: 250px;
+        position: relative;
+        object-position: center top;
+        object-fit: cover;
+      }
 
-/* 버튼 스타일 */
-.count-popup-footer button {
-  flex: 1;
-  padding: 10px;
-  font-size: 16px;
-  color: white;
-  background-color: #007bff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
+      /* 카드 내용 */
+      .card-content {
+        margin: 10px;
+      }
 
-.count-popup-footer button:hover {
-  background-color: #0056b3;
-}
+      .card-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-top: auto;
+        margin-bottom: 10px;
+      }
 
-/* 취소 버튼 스타일 */
-#cancel-sell {
-  background-color: #dc3545;
-}
+      .card-description {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+      }
 
-#cancel-sell:hover {
-  background-color: #b02a37;
-}
-    
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="button-container">
-  <button id="teamSelectBtn" class="select-mode">팀 지정</button>
-  <button id="representativeSelectBtn" class="select-mode">대표 캐릭터 지정</button>
-  <button id="confirmBtn" class="select-mode disabled">확인</button>
-  <button id="cancelBtn" class="select-mode">취소</button>
-</div>
-    <div class="card-grid" id="card-container">
-      <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
+      .stars {
+        position: absolute;
+        bottom: -3%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ffc107; /* 별 색상 */
+        font-size: 30px;
+      }
+
+      .card-head {
+        position: relative;
+      }
+
+      .button-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .select-mode {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .select-mode:hover {
+        background-color: #0056b3;
+      }
+
+      .selected-team {
+        background-color: rgba(0, 0, 0, 0.2); /* 어두운 배경 */
+      }
+
+      .selected-representative {
+        background-color: rgba(255, 165, 0, 0.4); /* 주황색 배경 */
+      }
+
+      .disabled {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .popup {
+        display: none;
+        position: fixed;
+        flex-direction: column;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 400px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      }
+
+      .popup .popup-header {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #212529;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .popup .popup-body {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+
+      .popup .popup-footer {
+        display: flex;
+        justify-content: space-between;
+        padding-right: 50px;
+        padding-left: 50px;
+      }
+
+      .popup button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin: 0;
+      }
+
+      .popup button:hover {
+        background-color: #0056b3;
+      }
+
+      .popup-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+
+      .count-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        background-color: white;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: none;
+      }
+
+      /* 팝업 내부 콘텐츠 */
+      .count-popup-body {
+        padding: 20px;
+        text-align: center;
+      }
+
+      /* 입력 필드 스타일 */
+      #sell-count {
+        width: 80%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      /* 팝업 버튼 컨테이너 */
+      .count-popup-footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      /* 버튼 스타일 */
+      .count-popup-footer button {
+        flex: 1;
+        padding: 10px;
+        font-size: 16px;
+        color: white;
+        background-color: #007bff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .count-popup-footer button:hover {
+        background-color: #0056b3;
+      }
+
+      /* 취소 버튼 스타일 */
+      #cancel-sell {
+        background-color: #dc3545;
+      }
+
+      #cancel-sell:hover {
+        background-color: #b02a37;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="button-container">
+        <button id="teamSelectBtn" class="select-mode">팀 지정</button>
+        <button id="representativeSelectBtn" class="select-mode">대표 캐릭터 지정</button>
+        <button id="confirmBtn" class="select-mode disabled">확인</button>
+        <button id="cancelBtn" class="select-mode">취소</button>
+      </div>
+      <div class="card-grid" id="card-container">
+        <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>캐쉬</th>
+            <th>마일리지</th>
+            <th>재료</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="cash">-</td>
+            <td id="mileage">-</td>
+            <td id="enhancer">-</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>캐쉬</th>
-          <th>마일리지</th>
-          <th>재료</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td id="cash">-</td>
-          <td id="mileage">-</td>
-          <td id="enhancer">-</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
-  <div class="popup-overlay" id="popup-overlay"></div>
+    <div class="popup-overlay" id="popup-overlay"></div>
 
-  <!-- 팝업 내용 -->
-  <div class="popup" id="popup">
-    <div class="popup-header" id="popup-name">카드 이름</div>
-    <div class="popup-body">
-      <p>Grade: <span id="popup-grade">등급</span></p>
-      <p>Class: <span id="popup-class">클래스</span></p>
-      <p>Count: <span id="popup-count">카운트</span></p>
-      <p>Level: <span id="popup-level">레벨</span></p>
-    </div>
-    <div class="popup-footer">
-      <button id="upgradeBtn">강화</button>
-      <button id="promotionBtn">승급</button>
-      <button id="sellBtn">매각</button>
-    </div>
-  </div>
-
-  <div class="count-popup" id="count-popup" style="display: none;">
-    <div class="count-popup-body">
-      <p>매각할 수량을 입력하세요:</p>
-      <input type="number" id="sell-count" min="1" value="1" />
-      <div class="count-popup-footer">
-        <button id="confirm-sell">확인</button>
-        <button id="cancel-sell">취소</button>
+    <!-- 팝업 내용 -->
+    <div class="popup" id="popup">
+      <div class="popup-header" id="popup-name">카드 이름</div>
+      <div class="popup-body">
+        <p>Grade: <span id="popup-grade">등급</span></p>
+        <p>Class: <span id="popup-class">클래스</span></p>
+        <p>Count: <span id="popup-count">카운트</span></p>
+        <p>Level: <span id="popup-level">레벨</span></p>
+      </div>
+      <div class="popup-footer">
+        <button id="upgradeBtn">강화</button>
+        <button id="promotionBtn">승급</button>
+        <button id="sellBtn">매각</button>
       </div>
     </div>
-  </div>
 
-  <script>
-  const BASE_URL = 'http://localhost:9999/api';
+    <div class="count-popup" id="count-popup" style="display: none">
+      <div class="count-popup-body">
+        <p>매각할 수량을 입력하세요:</p>
+        <input type="number" id="sell-count" min="1" value="1" />
+        <div class="count-popup-footer">
+          <button id="confirm-sell">확인</button>
+          <button id="cancel-sell">취소</button>
+        </div>
+      </div>
+    </div>
 
-  async function fetchUserInfo() {
-  const token = localStorage.getItem("authToken");
+    <script>
+      const BASE_URL = "http://localhost:9999/api";
 
-  if (!token) {
-    alert("로그인이 필요합니다.");
-    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-    return;
-  }
+      async function fetchUserInfo() {
+        const token = localStorage.getItem("authToken");
 
-  try {
-    const response = await fetch(`${BASE_URL}/users`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+        if (!token) {
+          alert("로그인이 필요합니다.");
+          window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+          return;
+        }
 
-    if (response.ok) {
-      const result = await response.json();
-    } else {
-      alert("인증에 실패했습니다. 다시 로그인하세요.");
-      localStorage.removeItem("authToken");
-      window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-    }
-  } catch (error) {
-    console.error("유저 정보를 가져오는 중 오류 발생:", error);
-    alert("오류가 발생했습니다. 다시 로그인하세요.");
-    localStorage.removeItem("authToken");
-    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-  }
-}
-    // 상태 관리 변수
-    let isTeamSelectionMode = false; //팀모드
-    let isRepresentativeSelectionMode = false;//대표지정
-    let selectedTeam = [];
-    let selectedRepresentative = null;
+        try {
+          const response = await fetch(`${BASE_URL}/users`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-    // 버튼 요소 가져오기
-    const teamSelectBtn = document.getElementById("teamSelectBtn");
-    const representativeSelectBtn = document.getElementById("representativeSelectBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const confirmBtn = document.getElementById("confirmBtn");
+          if (response.ok) {
+            const result = await response.json();
+          } else {
+            alert("인증에 실패했습니다. 다시 로그인하세요.");
+            localStorage.removeItem("authToken");
+            window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+          }
+        } catch (error) {
+          console.error("유저 정보를 가져오는 중 오류 발생:", error);
+          alert("오류가 발생했습니다. 다시 로그인하세요.");
+          localStorage.removeItem("authToken");
+          window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+        }
+      }
+      // 상태 관리 변수
+      let isTeamSelectionMode = false; //팀모드
+      let isRepresentativeSelectionMode = false; //대표지정
+      let selectedTeam = [];
+      let selectedRepresentative = null;
 
-    // 팀 지정 모드 활성화
-    teamSelectBtn.addEventListener("click", () => {
-      if (!isTeamSelectionMode) {
+      // 버튼 요소 가져오기
+      const teamSelectBtn = document.getElementById("teamSelectBtn");
+      const representativeSelectBtn = document.getElementById("representativeSelectBtn");
+      const cancelBtn = document.getElementById("cancelBtn");
+      const confirmBtn = document.getElementById("confirmBtn");
+
+      // 팀 지정 모드 활성화
+      teamSelectBtn.addEventListener("click", () => {
+        if (!isTeamSelectionMode) {
+          resetSelections();
+          isTeamSelectionMode = true;
+          alert("팀 지정 모드가 활성화되었습니다.");
+        }
+      });
+
+      // 대표 지정 모드 활성화
+      representativeSelectBtn.addEventListener("click", () => {
+        if (!isRepresentativeSelectionMode) {
+          resetSelections();
+          isRepresentativeSelectionMode = true;
+          alert("대표 캐릭터 지정 모드가 활성화되었습니다.");
+        }
+      });
+
+      // 취소 버튼 이벤트
+      cancelBtn.addEventListener("click", () => {
         resetSelections();
-        isTeamSelectionMode = true;
-        alert("팀 지정 모드가 활성화되었습니다.");
-      }
-    });
+        alert("모드가 초기화되었습니다.");
+      });
 
-    // 대표 지정 모드 활성화
-    representativeSelectBtn.addEventListener("click", () => {
-      if (!isRepresentativeSelectionMode) {
-        resetSelections();
-        isRepresentativeSelectionMode = true;
-        alert("대표 캐릭터 지정 모드가 활성화되었습니다.");
-      }
-    });
+      // 확인 버튼 이벤트
+      confirmBtn.addEventListener("click", async () => {
+        if (isTeamSelectionMode) {
+          await submitTeamFormation();
+        } else if (isRepresentativeSelectionMode) {
+          await submitRepresentativeSelection();
+        } else {
+          alert("활성화된 모드가 없습니다.");
+        }
+      });
 
-    // 취소 버튼 이벤트
-    cancelBtn.addEventListener("click", () => {
-      resetSelections();
-      alert("모드가 초기화되었습니다.");
-    });
+      // 초기화 함수
+      function resetSelections() {
+        isTeamSelectionMode = false;
+        isRepresentativeSelectionMode = false;
+        selectedTeam = [];
+        selectedRepresentative = null;
 
-    // 확인 버튼 이벤트
-    confirmBtn.addEventListener("click", async () => {
-      if (isTeamSelectionMode) {
-        await submitTeamFormation();
-      } else if (isRepresentativeSelectionMode) {
-        await submitRepresentativeSelection();
-      } else {
-        alert("활성화된 모드가 없습니다.");
-      }
-    });
-
-    
-    // 초기화 함수
-    function resetSelections() {
-  isTeamSelectionMode = false;
-  isRepresentativeSelectionMode = false;
-  selectedTeam = [];
-  selectedRepresentative = null;
-
-  const cards = document.querySelectorAll(".card");
-  cards.forEach(card => {
-    card.classList.remove('selected-team', 'selected-representative');
-  });
-
-  updateConfirmButtonState(); // 확인 버튼 상태 초기화
-}
-
-    // 팀 지정 API 호출
-    async function submitTeamFormation() {
-      if (selectedTeam.length !== 3) {
-        alert("팀을 구성하려면 정확히 3명의 캐릭터를 선택해야 합니다.");
-        return;
-      }
-
-      const formation = selectedTeam.map(agent => agent.agentKey);
-
-      try {
-        const response = await fetch(`${BASE_URL}/users/formation`, {
-          method: 'PUT',
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-          },
-          body: JSON.stringify({ formation }),
+        const cards = document.querySelectorAll(".card");
+        cards.forEach((card) => {
+          card.classList.remove("selected-team", "selected-representative");
         });
 
-        if (!response.ok) throw new Error('팀 지정에 실패했습니다.');
-
-        const data = await response.json();
-        alert(data.message || "팀이 성공적으로 지정되었습니다!");
-        resetSelections();
-      } catch (error) {
-        console.error(error);
-        alert("오류가 발생했습니다.");
+        updateConfirmButtonState(); // 확인 버튼 상태 초기화
       }
-    }
 
-    // 대표 지정 API 호출
-    async function submitRepresentativeSelection() {
-      if (!selectedRepresentative) {
-        alert("대표 캐릭터를 선택해야 합니다.");
-        return;
+      // 팀 지정 API 호출
+      async function submitTeamFormation() {
+        if (selectedTeam.length !== 3) {
+          alert("팀을 구성하려면 정확히 3명의 캐릭터를 선택해야 합니다.");
+          return;
+        }
+
+        const formation = selectedTeam.map((agent) => agent.agentKey);
+
+        try {
+          const response = await fetch(`${BASE_URL}/users/formation`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+            body: JSON.stringify({ formation }),
+          });
+
+          if (!response.ok) throw new Error("팀 지정에 실패했습니다.");
+
+          const data = await response.json();
+          alert(data.message || "팀이 성공적으로 지정되었습니다!");
+          resetSelections();
+        } catch (error) {
+          console.error(error);
+          alert("오류가 발생했습니다.");
+        }
       }
-      try {
-        const response = await fetch(`${BASE_URL}/users/favorite`, {
-          method: 'PATCH',
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-          },
-          body: JSON.stringify({ agent: selectedRepresentative.agentKey }),
-        });
 
-        if (!response.ok) throw new Error('대표 캐릭터 지정에 실패했습니다.');
+      // 대표 지정 API 호출
+      async function submitRepresentativeSelection() {
+        if (!selectedRepresentative) {
+          alert("대표 캐릭터를 선택해야 합니다.");
+          return;
+        }
+        try {
+          const response = await fetch(`${BASE_URL}/users/favorite`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+            body: JSON.stringify({ agent: selectedRepresentative.agentKey }),
+          });
 
-        const data = await response.json();
-        alert(data.message || "대표 캐릭터가 성공적으로 지정되었습니다!");
-        resetSelections();
-      } catch (error) {
-        console.error(error);
-        alert("오류가 발생했습니다.");
+          if (!response.ok) throw new Error("대표 캐릭터 지정에 실패했습니다.");
+
+          const data = await response.json();
+          alert(data.message || "대표 캐릭터가 성공적으로 지정되었습니다!");
+          resetSelections();
+        } catch (error) {
+          console.error(error);
+          alert("오류가 발생했습니다.");
+        }
       }
-    }
-   
-    // 카드 클릭 이벤트
-    function handleCardClick(card, agent) {
-  if (isTeamSelectionMode) {
-    if (selectedTeam.includes(agent)) {
-      selectedTeam = selectedTeam.filter(item => item !== agent);
-      card.classList.remove('selected-team');
-    } else if (selectedTeam.length < 3) {
-      selectedTeam.push(agent);
-      card.classList.add('selected-team');
-    } else {
-      alert("팀은 최대 3개까지만 지정할 수 있습니다.");
-    }
-  } else if (isRepresentativeSelectionMode) {
-    if (selectedRepresentative === agent) {
-      selectedRepresentative = null;
-      card.classList.remove('selected-representative');
-    } else {
-      const cards = document.querySelectorAll(".card");
-      cards.forEach(c => c.classList.remove('selected-representative'));
 
-      selectedRepresentative = agent;
-      card.classList.add('selected-representative');
-    }if(!isTeamSelectionMode&&!isRepresentativeSelectionMode) {
-        openCountPopup(agent)
-    }
-  }
+      // 카드 클릭 이벤트
+      function handleCardClick(card, agent) {
+        if (isTeamSelectionMode) {
+          if (selectedTeam.includes(agent)) {
+            selectedTeam = selectedTeam.filter((item) => item !== agent);
+            card.classList.remove("selected-team");
+          } else if (selectedTeam.length < 3) {
+            selectedTeam.push(agent);
+            card.classList.add("selected-team");
+          } else {
+            alert("팀은 최대 3개까지만 지정할 수 있습니다.");
+          }
+        } else if (isRepresentativeSelectionMode) {
+          if (selectedRepresentative === agent) {
+            selectedRepresentative = null;
+            card.classList.remove("selected-representative");
+          } else {
+            const cards = document.querySelectorAll(".card");
+            cards.forEach((c) => c.classList.remove("selected-representative"));
 
-  updateConfirmButtonState(); // 확인 버튼 상태 업데이트
-}
+            selectedRepresentative = agent;
+            card.classList.add("selected-representative");
+          }
+          if (!isTeamSelectionMode && !isRepresentativeSelectionMode) {
+            openCountPopup(agent);
+          }
+        }
 
-    // 카드 데이터 로드
-    async function loadAgents() {
-      try {
-        const response = await fetch(`${BASE_URL}/users/agents`, {
-          method: 'GET',
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-          },
-        });
+        updateConfirmButtonState(); // 확인 버튼 상태 업데이트
+      }
 
-        if (!response.ok) throw new Error('데이터를 가져오는 데 실패했습니다.');
+      // 카드 데이터 로드
+      async function loadAgents() {
+        try {
+          const response = await fetch(`${BASE_URL}/users/agents`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+          });
 
-        const data = await response.json();
-        const cardContainer = document.getElementById('card-container');
+          if (!response.ok) throw new Error("데이터를 가져오는 데 실패했습니다.");
 
-        data.data.forEach(agent => {
-          const card = document.createElement('div');
-          card.classList.add('card');
-          card.innerHTML = `
+          const data = await response.json();
+          const cardContainer = document.getElementById("card-container");
+
+          data.data.forEach((agent) => {
+            const card = document.createElement("div");
+            card.classList.add("card");
+            card.innerHTML = `
+            <div class="card-head">
             <img src="${agent.agent.url}" alt="${agent.name}" class="card-image" />
+            <div class="stars">${"★".repeat(agent.class)}</div>
+            </div>
         <div class="card-content">
-          <div class="stars">${'★'.repeat(agent.class)}</div>
-          <h2 class="card-title">LV ${agent.level} ${agent.name} ${agent.agent.grade}급</h2>
+          <h2 class="card-title">LV ${agent.level} ${agent.name} ${agent.agent.grade.toUpperCase()}급</h2>
           <p class="card-description">포지션: ${agent.agent.position}<br>팀: ${agent.agent.team}</p>
         </div>
           `;
 
-          card.addEventListener("click", () => handleCardClick(card, agent));
-          card.addEventListener('click', () => openPopup(agent));
-          cardContainer.appendChild(card);
-        });
-      } catch (error) {
-        console.error(error);
-        alert("오류가 발생했습니다.");
+            card.addEventListener("click", () => handleCardClick(card, agent));
+            card.addEventListener("click", () => openPopup(agent));
+            cardContainer.appendChild(card);
+          });
+        } catch (error) {
+          console.error(error);
+          alert("오류가 발생했습니다.");
+        }
       }
-    }
 
-    //확인버튼 활성화 비활성화
-    function updateConfirmButtonState() {
-  if (
-    (isTeamSelectionMode && selectedTeam.length === 3) ||
-    (isRepresentativeSelectionMode && selectedRepresentative !== null)
-  ) {
-    confirmBtn.classList.remove("disabled"); // 버튼 활성화
-  } else {
-    confirmBtn.classList.add("disabled"); // 버튼 비활성화
-  }
-}
-    
-  function updatePopupContent(agent) {
-  document.getElementById('popup-name').textContent = agent.name;
-  document.getElementById('popup-grade').textContent = agent.agent.grade;
-  document.getElementById('popup-class').textContent = agent.class;
-  document.getElementById('popup-count').textContent = agent.count;
-  document.getElementById('popup-level').textContent = agent.level;
-}
+      //확인버튼 활성화 비활성화
+      function updateConfirmButtonState() {
+        if (
+          (isTeamSelectionMode && selectedTeam.length === 3) ||
+          (isRepresentativeSelectionMode && selectedRepresentative !== null)
+        ) {
+          confirmBtn.classList.remove("disabled"); // 버튼 활성화
+        } else {
+          confirmBtn.classList.add("disabled"); // 버튼 비활성화
+        }
+      }
 
-  function openPopup(agent) {
-    if (!isTeamSelectionMode&&!isRepresentativeSelectionMode){
-        const popup = document.getElementById('popup');
-    const popupOverlay = document.getElementById('popup-overlay');
-    
-    // 팝업 내용 설정
-    document.getElementById('popup-name').textContent = agent.name;
-    document.getElementById('popup-grade').textContent = agent.agent.grade;
-    document.getElementById('popup-class').textContent = agent.class;
-    document.getElementById('popup-count').textContent = agent.count;
-    document.getElementById('popup-level').textContent = agent.level;
+      function updatePopupContent(agent) {
+        document.getElementById("popup-name").textContent = agent.name;
+        document.getElementById("popup-grade").textContent = agent.agent.grade;
+        document.getElementById("popup-class").textContent = agent.class;
+        document.getElementById("popup-count").textContent = agent.count;
+        document.getElementById("popup-level").textContent = agent.level;
+      }
 
-    // 각 버튼의 클릭 이벤트 설정
-    document.getElementById('upgradeBtn').onclick = () => handleUpgrade(agent.agentKey);
-    document.getElementById('promotionBtn').onclick = () => handlePromotion(agent.agentKey);
-    document.getElementById('sellBtn').onclick = () => openCountPopup(agent);
+      function openPopup(agent) {
+        if (!isTeamSelectionMode && !isRepresentativeSelectionMode) {
+          const popup = document.getElementById("popup");
+          const popupOverlay = document.getElementById("popup-overlay");
 
-    // 팝업 표시
-    popup.style.display = 'block';
-    popupOverlay.style.display = 'block';
-    
-    }
-  }
+          // 팝업 내용 설정
+          document.getElementById("popup-name").textContent = agent.name;
+          document.getElementById("popup-grade").textContent = agent.agent.grade;
+          document.getElementById("popup-class").textContent = agent.class;
+          document.getElementById("popup-count").textContent = agent.count;
+          document.getElementById("popup-level").textContent = agent.level;
 
-  function closePopup() {
-    document.getElementById('popup').style.display = 'none';
-    document.getElementById('popup-overlay').style.display = 'none';
-  }
+          // 각 버튼의 클릭 이벤트 설정
+          document.getElementById("upgradeBtn").onclick = () => handleUpgrade(agent.agentKey);
+          document.getElementById("promotionBtn").onclick = () => handlePromotion(agent.agentKey);
+          document.getElementById("sellBtn").onclick = () => openCountPopup(agent);
 
-  // API 호출 함수들
-  async function handleUpgrade(agentKey) {
-  try {
-    const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
-      method: 'PATCH',
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-      },
-      body: JSON.stringify({ agent: agentKey }),
-    });
+          // 팝업 표시
+          popup.style.display = "block";
+          popupOverlay.style.display = "block";
+        }
+      }
 
-    if (!response.ok) throw new Error('강화 중 오류가 발생했습니다.');
+      function closePopup() {
+        document.getElementById("popup").style.display = "none";
+        document.getElementById("popup-overlay").style.display = "none";
+      }
 
-    const result = await response.json();
+      // API 호출 함수들
+      async function handleUpgrade(agentKey) {
+        try {
+          const response = await fetch(`${BASE_URL}/users/agents/intensify`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+            body: JSON.stringify({ agent: agentKey }),
+          });
 
-    // 강화 성공 메시지
-    alert(`메시지: ${result.message}
+          if (!response.ok) throw new Error("강화 중 오류가 발생했습니다.");
+
+          const result = await response.json();
+
+          // 강화 성공 메시지
+          alert(`메시지: ${result.message}
     경고: ${result.warning || "없음"}
     성공 확률: ${result.successRate}
-    남은 재료: ${result.currentMaterials}`);
+    남은 재료: ${result.enhancer}`);
 
-    // 서버에서 새로운 에이전트 데이터를 받아 팝업 업데이트
-    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
-      method: 'GET',
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          // 서버에서 새로운 에이전트 데이터를 받아 팝업 업데이트
+          const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+          });
+
+          if (!updatedAgentResponse.ok) throw new Error("강화 후 데이터를 가져오는 데 실패했습니다.");
+
+          const updatedAgent = await updatedAgentResponse.json();
+          await fetchAssets();
+          // 팝업 업데이트
+          updatePopupContent(updatedAgent.data);
+
+          const cardContainer = document.getElementById("card-container");
+          cardContainer.innerHTML = ""; // 기존 내용 제거
+          loadAgents();
+        } catch (error) {
+          console.error(error);
+          alert("강화 중 오류가 발생했습니다.");
+        }
       }
-    });
 
-    if (!updatedAgentResponse.ok) throw new Error('강화 후 데이터를 가져오는 데 실패했습니다.');
+      async function handlePromotion(agentKey) {
+        try {
+          const response = await fetch(`${BASE_URL}/users/agents/promote`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+            body: JSON.stringify({ agent: agentKey }),
+          });
 
-    const updatedAgent = await updatedAgentResponse.json();
-    await fetchAssets();
-    // 팝업 업데이트
-    updatePopupContent(updatedAgent.data);
+          if (!response.ok) throw new Error("승급 중 오류가 발생했습니다.");
 
-    const cardContainer = document.getElementById('card-container');
-    cardContainer.innerHTML = ''; // 기존 내용 제거
-    loadAgents();
+          const result = await response.json();
 
-  } catch (error) {
-    console.error(error);
-    alert('강화 중 오류가 발생했습니다.');
-  }
-}
+          // 승급 성공 메시지
+          alert(`승급 결과: ${result.class}`);
 
-  async function handlePromotion(agentKey) {
-    try {
-      const response = await fetch(`${BASE_URL}/users/agents/promote`, {
-        method: 'PATCH',
-        headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-          },
-        body: JSON.stringify({ agent: agentKey}),
-      });
+          const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+          });
 
-      if (!response.ok) throw new Error('승급 중 오류가 발생했습니다.');
+          if (!updatedAgentResponse.ok) throw new Error("강화 후 데이터를 가져오는 데 실패했습니다.");
 
-      const result = await response.json();
+          const updatedAgent = await updatedAgentResponse.json();
+          await fetchAssets();
+          // 팝업 업데이트
+          updatePopupContent(updatedAgent.data);
 
-    // 승급 성공 메시지
-    alert(`메시지: ${result.message}
-    성공 확률: ${result.result}
-    남은 재료: ${result.class}`);
-
-    const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
-      method: 'GET',
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          const cardContainer = document.getElementById("card-container");
+          cardContainer.innerHTML = ""; // 기존 내용 제거
+          loadAgents();
+        } catch (error) {
+          console.error(error);
+          alert("승급 중 오류가 발생했습니다.");
+        }
       }
-    });
 
-    if (!updatedAgentResponse.ok) throw new Error('강화 후 데이터를 가져오는 데 실패했습니다.');
+      function openCountPopup(agent) {
+        const countPopup = document.getElementById("count-popup");
+        const sellCountInput = document.getElementById("sell-count");
 
-    const updatedAgent = await updatedAgentResponse.json();
-    await fetchAssets();
-    // 팝업 업데이트
-    updatePopupContent(updatedAgent.data);
+        // 기본값 초기화
+        sellCountInput.value = 1;
 
-    const cardContainer = document.getElementById('card-container');
-    cardContainer.innerHTML = ''; // 기존 내용 제거
-    loadAgents();
+        countPopup.style.display = "block";
 
-    } catch (error) {
-      console.error(error);
-      alert('승급 중 오류가 발생했습니다.');
-    }
-  }
+        // 확인 버튼 이벤트
+        document.getElementById("confirm-sell").onclick = async () => {
+          const count = parseInt(sellCountInput.value);
 
-  function openCountPopup(agent) {
-  const countPopup = document.getElementById('count-popup');
-  const sellCountInput = document.getElementById('sell-count');
+          if (isNaN(count) || count <= 0 || count > agent.count) {
+            alert("유효한 수량을 입력하세요. (최대 " + agent.count + ")");
+            return;
+          }
 
-  // 기본값 초기화
-  sellCountInput.value = 1;
+          await handleSell(agent.agentKey, count);
+          countPopup.style.display = "none"; // 팝업 닫기
+        };
 
-  countPopup.style.display = 'block';
+        // 취소 버튼 이벤트
+        document.getElementById("cancel-sell").onclick = () => {
+          countPopup.style.display = "none"; // 팝업 닫기
+        };
+      }
 
-  // 확인 버튼 이벤트
-  document.getElementById('confirm-sell').onclick = async () => {
-    const count = parseInt(sellCountInput.value);
+      async function handleSell(agentKey, count) {
+        try {
+          const response = await fetch(`${BASE_URL}/users/agents/sale`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+            body: JSON.stringify({ agent: agentKey, count: count }),
+          });
 
-    if (isNaN(count) || count <= 0 || count > agent.count) {
-      alert('유효한 수량을 입력하세요. (최대 ' + agent.count + ')');
-      return;
-    }
+          if (!response.ok) throw new Error("매각에 실패했습니다.");
 
-    await handleSell(agent.agentKey, count);
-    countPopup.style.display = 'none'; // 팝업 닫기
-  };
+          const result = await response.json();
 
-  // 취소 버튼 이벤트
-  document.getElementById('cancel-sell').onclick = () => {
-    countPopup.style.display = 'none'; // 팝업 닫기
-  };
-}
-
-async function handleSell(agentKey, count) {
-  try {
-    const response = await fetch(`${BASE_URL}/users/agents/sale`, {
-      method: 'PATCH',
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
-      },
-      body: JSON.stringify({ agent: agentKey, count: count }),
-    });
-
-    if (!response.ok) throw new Error('매각에 실패했습니다.');
-
-    
-    const result = await response.json();
-    
-    
-//매각성공
-alert(`메시지: ${result[0].message}
+          //매각성공
+          alert(`메시지: ${result[0].message}
 얻은 캐쉬: ${result[0].amount}
 현재 캐쉬: ${result[0].cash}`);
 
-    
-const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
-      method: 'GET',
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
-      }
-    });
+          const updatedAgentResponse = await fetch(`${BASE_URL}/users/agents/${agentKey}`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+          });
 
-    if (!updatedAgentResponse.ok) throw new Error('매각 후 데이터를 가져오는 데 실패했습니다.');
+          if (!updatedAgentResponse.ok) throw new Error("매각 후 데이터를 가져오는 데 실패했습니다.");
 
-const updatedData = await updatedAgentResponse.json();
-const agents = updatedData.data;
+          const updatedData = await updatedAgentResponse.json();
+          const agents = updatedData.data;
 
-
-// 카드가 0장인 경우 새로고침 처리
-if (!agents || agents.length === 0) {
-  alert("모든 카드를 매각했습니다. 새로고침합니다.");
-  window.location.reload(); // 새로고침
-  return;
-}
-
-await fetchAssets();
-    // 팝업 업데이트
-    updatePopupContent(agents);
-
-    const cardContainer = document.getElementById('card-container');
-    cardContainer.innerHTML = ''; // 기존 내용 제거
-    loadAgents();
-  } catch (error) {
-    console.error(error);
-    alert('매각 중 오류가 발생했습니다.');
-  }
-}
-
-async function fetchAssets() {
-      try {
-        const response = await fetch(`${BASE_URL}/users/assets`, {
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          // 카드가 0장인 경우 새로고침 처리
+          if (!agents || agents.length === 0) {
+            alert("모든 카드를 매각했습니다. 새로고침합니다.");
+            window.location.reload(); // 새로고침
+            return;
           }
-        });
 
-        if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
+          await fetchAssets();
+          // 팝업 업데이트
+          updatePopupContent(agents);
 
-        const { data } = await response.json();
-
-        // 테이블에 데이터를 채움
-        document.getElementById("cash").textContent = data.cash || 0;
-        document.getElementById("mileage").textContent = data.mileage || 0;
-        document.getElementById("enhancer").textContent = data.enhancer || 0;
-      } catch (error) {
-        console.error(error);
-        alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+          const cardContainer = document.getElementById("card-container");
+          cardContainer.innerHTML = ""; // 기존 내용 제거
+          loadAgents();
+        } catch (error) {
+          console.error(error);
+          alert("매각 중 오류가 발생했습니다.");
+        }
       }
-    }
 
-// 팝업 오버레이 클릭 시 닫기
-document.getElementById('popup-overlay').addEventListener('click', closePopup);
+      async function fetchAssets() {
+        try {
+          const response = await fetch(`${BASE_URL}/users/assets`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`, // 토큰 추가
+            },
+          });
 
+          if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
 
-fetchUserInfo();
-loadAgents();
-fetchAssets();
-    
-</script>
+          const { data } = await response.json();
 
-</body>
+          // 테이블에 데이터를 채움
+          document.getElementById("cash").textContent = data.cash || 0;
+          document.getElementById("mileage").textContent = data.mileage || 0;
+          document.getElementById("enhancer").textContent = data.enhancer || 0;
+        } catch (error) {
+          console.error(error);
+          alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+        }
+      }
+
+      // 팝업 오버레이 클릭 시 닫기
+      document.getElementById("popup-overlay").addEventListener("click", closePopup);
+
+      fetchUserInfo();
+      loadAgents();
+      fetchAssets();
+    </script>
+  </body>
 </html>

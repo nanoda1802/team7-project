@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>가챠 및 보유 재화</title>
-  <link rel="stylesheet" href="gachastyles.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -244,8 +243,9 @@
 
   <script>
     const BASE_URL = 'http://localhost:9999/api';
+    
 
-    const pickup = JSON.parse(localStorage.getItem("pickupkey"));; 
+    const pickup = JSON.parse(localStorage.getItem("pickupkey")) || {key : 3, name:"가렌"};; 
 
     console.log(JSON.parse(localStorage.getItem("pickupkey")));
     console.log(JSON.parse(localStorage.getItem("pickupkey")));
@@ -330,7 +330,7 @@
 
         const result = await response.json();
 
-        alert(`messag: ${result.message}`);
+        alert(`캐시가 ${result.message}`);
         fetchAssets()
         closePopup(); // 팝업 닫기
       } catch (error) {
@@ -401,7 +401,7 @@
           card.innerHTML = `
           <img src="${result.agent.url}" alt="${result.agent.name}" class="card-image" />
         <div class="card-content">
-          <h2 class="card-title">${result.agent.name} ${result.agent.grade}급</h2>
+          <h2 class="card-title">${result.agent.name} ${result.agent.grade.toUpperCase()}급</h2>
           <p class="card-description">포지션: ${result.agent.position}<br>팀: ${result.agent.team}</p>
         </div>
           `;

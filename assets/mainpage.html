@@ -1,111 +1,126 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Main Page</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Main Page</title>
+    <style>
+      body {
+        background-image: url("https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/b73db1e6cf4c92e8e3550fc20a5b124f802a8165-1920x1080.jpg");
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+      }
 
-    .button-container {
-      margin-top: 50px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
+      #head {
+        margin: 3vh 0 0 0;
+        padding-top: 5vh;
+        text-align: center;
+        height: 180px;
+        background-color: rgb(154, 211, 205);
+        color: white;
+        font-size: 120px;
+      }
 
-    .main-button {
-      width: 80%;
-      max-width: 400px;
-      padding: 20px;
-      font-size: 1.5rem;
-      cursor: pointer;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      margin: 0 auto;
-    }
+      #user-info {
+        background-color: white;
+        height: 5vh;
+      }
 
-    .main-button:hover {
-      background-color: #0056b3;
-    }
-  </style>
-</head>
-<body>
-  <h1>쁘띠 lol 메인페이지</h1>
-  <div id="user-info"></div>
-  <div class="button-container">
-    <button class="main-button" id="champion-management">챔피언 관리</button>
-    <button class="main-button" id="gacha">챔피언 뽑기</button>
-    <button class="main-button" id="battle">대전</button>
-    <button class="main-button" id="logoutButton">로그아웃</button>
-  </div>
-  <script> 
+      .button-container {
+        margin-top: 50px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
 
-const BASE_URL = "http://localhost:9999/api"; // 백엔드 API 주소
+      .main-button {
+        width: 80%;
+        max-width: 400px;
+        padding: 20px;
+        font-size: 1.5rem;
+        cursor: pointer;
+        background-color: white;
+        color: rgb(131, 181, 176);
+        font-weight: bolder;
+        border: none;
+        border-radius: 8px;
+        margin: 0 auto;
+      }
 
-// 토큰 확인 및 유저 정보 가져오기
-async function fetchUserInfo() {
-  const token = localStorage.getItem("authToken");
+      .main-button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="head">쁘띠 TFT 프로젝트</h1>
+    <div id="user-info"></div>
+    <div class="button-container">
+      <button class="main-button" id="champion-management">챔피언 관리</button>
+      <button class="main-button" id="gacha">챔피언 뽑기</button>
+      <button class="main-button" id="battle">대전</button>
+      <button class="main-button" id="logoutButton">로그아웃</button>
+    </div>
+    <script>
+      const BASE_URL = "http://localhost:9999/api"; // 백엔드 API 주소
 
-  if (!token) {
-    alert("로그인이 필요합니다.");
-    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-    return;
-  }
+      // 토큰 확인 및 유저 정보 가져오기
+      async function fetchUserInfo() {
+        const token = localStorage.getItem("authToken");
 
-  try {
-    const response = await fetch(`${BASE_URL}/users`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+        if (!token) {
+          alert("로그인이 필요합니다.");
+          window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+          return;
+        }
 
-    if (response.ok) {
-      const result = await response.json();
-      document.getElementById("user-info").innerText = `${result.data.nickname}`;
-    } else {
-      alert("인증에 실패했습니다. 다시 로그인하세요.");
-      localStorage.removeItem("authToken");
-      window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-    }
-  } catch (error) {
-    console.error("유저 정보를 가져오는 중 오류 발생:", error);
-    alert("오류가 발생했습니다. 다시 로그인하세요.");
-    localStorage.removeItem("authToken");
-    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
-  }
-}
+        try {
+          const response = await fetch(`${BASE_URL}/users`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
 
-// 버튼 이벤트 설정
-document.getElementById("champion-management").addEventListener("click", () => {
-  window.location.href = "agentmanagementassets.html";
-});
+          if (response.ok) {
+            const result = await response.json();
+          } else {
+            alert("인증에 실패했습니다. 다시 로그인하세요.");
+            localStorage.removeItem("authToken");
+            window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+          }
+        } catch (error) {
+          console.error("유저 정보를 가져오는 중 오류 발생:", error);
+          alert("오류가 발생했습니다. 다시 로그인하세요.");
+          localStorage.removeItem("authToken");
+          window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+        }
+      }
 
-document.getElementById("gacha").addEventListener("click", () => {
-  window.location.href = "gachaassets.html";
-});
+      // 버튼 이벤트 설정
+      document.getElementById("champion-management").addEventListener("click", () => {
+        window.location.href = "agentmanagementassets.html";
+      });
 
-document.getElementById("battle").addEventListener("click", () => {
-  window.location.href = "battle.html";
-});
+      document.getElementById("gacha").addEventListener("click", () => {
+        window.location.href = "gachaassets.html";
+      });
 
-document.getElementById("logoutButton").addEventListener("click", () => {
-  localStorage.removeItem("authToken");
-  alert("로그아웃 되었습니다.");
-  location.href = "login.html"; // 로그인 페이지로 이동
-});
+      document.getElementById("battle").addEventListener("click", () => {
+        window.location.href = "battle.html";
+      });
 
-// 초기화
-fetchUserInfo();
-  </script>
-</body>
+      document.getElementById("logoutButton").addEventListener("click", () => {
+        localStorage.removeItem("authToken");
+        alert("로그아웃 되었습니다.");
+        location.href = "login.html"; // 로그인 페이지로 이동
+      });
+
+      // 초기화
+      fetchUserInfo();
+    </script>
+  </body>
 </html>
