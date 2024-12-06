@@ -69,6 +69,7 @@ router.post("/agents", async (req, res, next) => {
         team: true,
         position: true,
         grade: true,
+        url:true,
       },
       orderBy: [orderByCondition], // 동적으로 생성된 orderBy 조건 사용
     });
@@ -97,6 +98,7 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
           team: true,
           position: true,
           grade: true,
+          url: true,
         },
       },
     },
@@ -104,6 +106,36 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
 
   return res.status(200).json({ data: showMyAgents });
 });
+
+//보유 챔피언 하나만 조회.
+router.get("/users/agents/:agentKey", authMiddleware, async (req, res, next) => {
+    const { user } = req
+    const agentKey = req.params.agentKey;
+  
+    const showMyAgents = await prisma.myAgents.findFirst({
+      where: { agentKey: +agentKey, userKey: user.userKey },
+      select: {
+        agentKey: true,
+        name: true,
+        class: true,
+        level: true,
+        count: true,
+        agent: {
+          select: {
+            team: true,
+            position: true,
+            grade: true,
+            url: true,
+          },
+        },
+      },
+    });
+  
+    return res
+      .status(200)
+      .json({ data: showMyAgents });
+  });
+
 
 // 챔피언 매각
 router.patch("/users/agents/sale", authMiddleware, champVerification, async (req, res, next) => {
@@ -230,25 +262,23 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
 // 챔피언 뽑기
 router.patch("/users/agents/gacha", authMiddleware, champVerification, async (req, res, next) => {
     try {
-      const { count,pickup } = req.body;
+      const { count, pickup } = req.body;
       const { agent, user } = req;
       let enhancerCount = 0;
       let totalCost = 0;
       let totalMileage = 0;
       const validCount = [1,10]
-
       // 횟수 확인
       if (!count || isNaN(+count) || !validCount.includes(+count) ) return res
           .status(400)
           .json({
             errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
           });
-
+         
       // 픽업 챔피언 확인
       if (agent.grade !== "s") return res
           .status(400)
           .json({ errorMessage: "<pickup> 챔피언은 S급이여야 합니다!" });
-
       //할인 적용
       if (count >= 10) {
         totalCost = count * 900;
@@ -257,7 +287,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         totalCost = count * 1000;
         totalMileage = count * 10;
       }
-
       // 비용 확인
       const userAssets = await prisma.assets.findUnique({
         where: { userKey: user.userKey },
@@ -275,6 +304,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
           name: true,
           grade: true,
           position: true,
+          url: true,
         },
       });
       if (!agents) return res
@@ -400,7 +430,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         });
 
     } catch (error) {
-      console.error(error);
       return res
         .status(500)
         .json({ error: "서버 오류" });
@@ -574,3 +603,4 @@ router.patch("/users/agents/promote", authMiddleware, champVerification, async (
 });
 
 export default router;
+
