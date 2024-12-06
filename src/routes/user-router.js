@@ -180,7 +180,7 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
 });
 
 // 보유 재화 조회
-router.get("/users/assets", authMiddleware, async (req, res, naxt) => {
+router.get("/users/assets", authMiddleware, async (req, res, next) => {
   try {
     const { user } = req;
     const assets = await prisma.assets.findFirst({
