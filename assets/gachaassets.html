@@ -72,7 +72,7 @@
   gap: 20px; /* 카드 간 간격 */
   justify-content: center;
   width: 80%; /* 부모 컨테이너 너비에 맞춤 */
-  max-height: 330px;
+  max-height: 55vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 10px;
@@ -99,6 +99,7 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-align: center;
   cursor: pointer;
+  height: 350px;
   margin-top: 20px;
 }
 
@@ -110,19 +111,21 @@
 /* 카드 이미지 */
 .card-image {
   width: 100%;
-  height: 150px;
+  height: 250px;
+  object-position: center top;
   object-fit: cover;
 }
 
 /* 카드 내용 */
 .card-content {
-  padding: 15px;
+  margin: 10px
 }
 
 .card-title {
   font-size: 18px;
   font-weight: bold;
   color: #333;
+  margin-top: auto;
   margin-bottom: 10px;
 }
 
@@ -386,10 +389,13 @@
         // 강화재료 처리
         if (result.agent === "enhancer") {
           card.innerHTML = `
-            <div class="card-header">강화 재료</div>
+          <img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/90b5d5184cec068923b26231f963dd6637a2c526-1920x1080.jpg?auto=format&fit=fill&q=80&w=1302" alt="강화재료" class="card-image" />
+          <div class="card-content">  
+            <h2 class="card-title">강화 재료</h2>
             <div class="card-body">
-              <span>등급: 재료</span>
+              <p class="card-description">등급: 재료</p>
             </div>
+          </div>
           `;
         } else {
           card.innerHTML = `
