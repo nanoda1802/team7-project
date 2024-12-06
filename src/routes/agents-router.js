@@ -284,15 +284,18 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
       const aAgents = agents.filter((agent) => agent.grade === "a");
       const sAgents = agents.filter((agent) => agent.grade === "s");
 
-      // 랜덤 챔피언 뽑기
-      function getRandomAgent(agents, weighting = null) {
-        if (!weighting) {
+      // 등급별 챔피언 랜덤 설정
+      function getRandomAgent(agents, pickup = null) {
+        if (!pickup) {
           // 기본 균등 확률
-          return agents[Math.floor(Math.random() * agents.length)];
+          return agents[Math.trunc(Math.random() * agents.length)];
         }
-        const weights = agents.map((agent) => agent.agentKey === weighting); //가중치 반환. [1/3, 2/45,...]
-        const totalWeight = weights.reduce((acc, w) => acc + w, 0);
-        const random = Math.random() * totalWeight;
+        // 가중치 설정 prob1 = pickup 확률 prob2 = 나머지 s급 확률
+        const prob1 = 65;
+        const prob2 = (100 - prob1) / agents.length - 1 ;
+        // 확률 계산
+        const weights = agents.map((agent) => agent.agentKey === pickup ? prob1 : prob2); 
+        const random = Math.trunc(Math.random() * 100) 
 
         let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
         for (let i = 0; i < agents.length; i++) {
@@ -307,7 +310,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 
       // agent업데이트 트랜잭션
       async function updateMyAgentsTransaction(tx, userKey, agentKey, name) {
-        const existingAgent = await tx.myAgents.ㅕ({
+        const existingAgent = await tx.myAgents.findFirst({
           where: {
             userKey: +userKey,
             agentKey,
@@ -341,9 +344,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         for (let i = 0; i < count; i++) {
           // 픽업 천장일 시
           if (countS === 50) {
-            const selectedAgent = getRandomAgent(sAgents, pickup)
-            // 픽업 캐릭터하고 같은 캐릭터인지 판정해서 확률을 다르게 적용
-            agentKey === pickup ? 10 : 4
+            const selectedAgent = sAgents.find((e) => e.agentKey === pickup)
             //픽업 확률 초기화
             countS = 0;
             // 나온값 을 저장
@@ -382,17 +383,11 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             );
           // 기본 S급 챔피언 확률
           } else {
-            const selectedAgent = getRandomAgent(sAgents, (agentKey) =>
-              agentKey === req.body.agentKey ? 1 / 3 : 2 / 45
-            );
+            const selectedAgent = getRandomAgent(sAgents, pickup);
             countS = 0;
             countA++;
             results.push({ agent: selectedAgent });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
+            await updateMyAgentsTransaction(tx,user.userKey,selectedAgent.agentKey,selectedAgent.name
             );
           }
         }
@@ -407,7 +402,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             mileage: { increment: totalMileage },
           },
         });
-
         return results;
       },
       {
