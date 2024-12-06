@@ -238,7 +238,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
       const validCount = [1,10]
 
       // 횟수 확인
-      if (!count || isNaN(+count) || !validCount.includes(count) ) return res
+      if (!count || isNaN(+count) || !validCount.includes(+count) ) return res
           .status(400)
           .json({
             errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
