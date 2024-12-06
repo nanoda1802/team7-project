@@ -191,7 +191,7 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
         mileage
       });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res
       .status(500)
       .json({ message: "서버 오류가 발생했습니다" });
@@ -199,7 +199,7 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
 });
 
 // 보유 재화 조회
-router.get("/users/assets", authMiddleware, async (req, res, naxt) => {
+router.get("/users/assets", authMiddleware, async (req, res, next) => {
   try {
     const { user } = req;
     const assets = await prisma.assets.findFirst({
