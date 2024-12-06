@@ -540,51 +540,45 @@ router.patch("/users/agents/intensify",authMiddleware,champVerification, async (
 
 // 챔피언 승급
 router.patch("/users/agents/promote", authMiddleware, champVerification, async (req, res) => {
+  try {
     const { agent, user } = req;
 
-    // 로그인 된 계정의 아이디가 아닌 경우 거절
+    // 보유 선수 확인
+    const myAgent = await prisma.myAgents.findFirst({where: { agentKey: agent.agentKey, userKey: user.userKey }});
+    if (!myAgent) return res
+      .status(404)
+      .json({ errorMessage: "현재 보유하고 있는 챔피언이 아닙니다." });
+    // 최대 승급된 챔피언 시 거부
+    if (myAgent.class >= 6) return res
+      .status(400)
+      .json({ errorMessage: "이미 최대 승급을 달성한 선수입니다" });
+    // 중복 보유량이 없을 경우 거부
+    if (myAgent.count <= 1) {
+      return res.status(400).json({ message: "승급할 챔피언이 부족합니다" });
+    }
 
-    try {
-      // 보유 선수 확인
-      const myAgent = await prisma.myAgents.findUnique({
-        where: { agentKey: agent.agentKey, userKey: user.userKey },
-      });
+    // 중복 보유 선수만 있다면 승급 처리
+    const updatedAgent = await prisma.myAgents.update({
+      where: { userKey_agentKey: { userKey: user.userKey, agentKey: agent.agentKey } },
+      data: {
+        count: { decrement: 1 },
+        class: { increment: 1 },
+      },
+    });
 
-      if (!myAgent) {
-        return res
-          .status(404)
-          .json({ message: "보유하고 있는 선수가 아닙니다." });
-      }
-
-      // 이미 6단 선수 시 거부
-      if (myAgent.class >= 6) {
-        return res.status(400).json({ message: "이미 6단 선수입니다." });
-      }
-
-      // 중복 보유량이 없을 경우 거부
-      if (myAgent.count <= 1) {
-        return res.status(400).json({ message: "중복 보유 선수가 없습니다." });
-      }
-
-      // 중복 보유 선수만 있다면 승급 처리
-      const updatedAgent = await prisma.myAgents.update({
-        where: { agentKey: agent.agentKey, userKey: user.userKey },
-        data: {
-          count: { decrement: 1 },
-          class: { increment: 1 },
-        },
-      });
-
-      // 승급 완료 시 상태코드와 승급 결과 반환
-      res.status(200).json({
+    // 승급 완료 시 상태코드와 승급 결과 반환
+    return res
+      .status(200)
+      .json({
         message: "승급 결과",
         result: updatedAgent,
         class: `${myAgent.class} ⇒ ${updatedAgent.class}`,
       });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "서버 오류가 발생했습니다." });
-    }
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
 });
 
