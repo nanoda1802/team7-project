@@ -150,21 +150,32 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
     // 변수 선언
     const { amount } = req.body;
 
-    if (isNaN(+amount) || amount <= 0) {
-      return res.status(400).json({ message: "유효한 금액을 입력해주세요." });
-    }
+    if (isNaN(+amount) || amount <= 0) return res
+      .status(400)
+      .json({ message: "유효한 금액을 입력해주세요." });
+
+    const mileage = Math.trunc(amount / 100)
 
     await prisma.assets.update({
       where: { userKey: user.userKey },
       data: {
         cash: { increment: amount },
-        mileage: { increment: 100 },
+        mileage: { increment: mileage },
       },
     });
-    return res.status(200).json({ message: `${amount}만큼 충전되었습니다.` });
+
+    return res
+      .status(200)
+      .json({ 
+        message: `${amount}만큼 충전되었습니다.`,
+        amount,
+        mileage
+      });
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: "서버 오류가 발생했습니다" });
+    return res
+      .status(500)
+      .json({ message: "서버 오류가 발생했습니다" });
   }
 });
 
