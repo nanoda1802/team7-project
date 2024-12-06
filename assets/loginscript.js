@@ -18,9 +18,6 @@ document.getElementById("signInForm").addEventListener("submit", async (e) => {
 
     const result = await response.json();
 
-    console.log("Response from server:", result);
-    console.log("User Key:", result.key);
-
     if (response.ok) {
       const token = response.headers.get("authorization").split(" ")[1]; // 토큰 저장
       localStorage.setItem("authToken", token); //토큰만 저장하고 헤더에 넣을때 하는거임.
