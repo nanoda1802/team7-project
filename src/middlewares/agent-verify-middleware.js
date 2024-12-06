@@ -4,7 +4,6 @@ import { prisma } from "../utils/prisma/index.js";
 const champVerification = async function (req, res, next) {
     try {
         const agentValues = req.body
-
         //배열 판정
         if (Array.isArray(agentValues?.formation) || Array.isArray(agentValues) ) {
             const agents = [];
@@ -50,6 +49,7 @@ const champVerification = async function (req, res, next) {
                 .json({ errorMessage: `<agent_key> ${agentKey}에 해당하는 챔피언은 존재하지 않습니다` })
             // 챔프 값 반환
             req.agent = agent;
+           
         }
         next();
         //오류들 반환

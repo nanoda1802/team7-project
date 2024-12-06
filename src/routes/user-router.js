@@ -100,6 +100,25 @@ router.post("/sign-up", async (req, res) => {
   }
 });
 
+router.get('/users', authMiddleware, async (req, res, naxt) => {
+  const { user } = req ;
+  try{
+   
+  return res
+  .status(200)
+  .json({ 
+    data: user
+  });
+} catch (err) {
+console.error(err);
+return res
+  .status(500)
+  .json({ message: "유저 조회 중 오류가 발생했습니다." });
+}
+})
+
+
+
 // ** 로그인 API **
 // 사용자의 로그인 요청을 처리합니다.
 router.post("/sign-in", async (req, res) => {

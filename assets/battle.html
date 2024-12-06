@@ -131,7 +131,7 @@
         <tr>
           <th>순위</th>
           <th>닉네임</th>
-          <th>선호 에이전트</th>
+          <th>대표 캐릭터</th>
           <th>랭크 점수</th>
           <th>승률</th>
           <th>전적</th>
@@ -160,8 +160,39 @@
 
   <script>
     const BASE_URL = 'http://localhost:9999/api';
-    const userKey = 4;
     
+    async function fetchUserInfo() {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    alert("로그인이 필요합니다.");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/users`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+    } else {
+      alert("인증에 실패했습니다. 다시 로그인하세요.");
+      localStorage.removeItem("authToken");
+      window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    }
+  } catch (error) {
+    console.error("유저 정보를 가져오는 중 오류 발생:", error);
+    alert("오류가 발생했습니다. 다시 로그인하세요.");
+    localStorage.removeItem("authToken");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+  }
+}
     // 친선전 버튼 클릭
     document.getElementById("friendly-match-btn").addEventListener("click", () => {
       document.getElementById("nickname-input").style.display = "block"; // 닉네임 입력창 표시
@@ -182,12 +213,12 @@
     
       try {
         // 정규전 API 호출
-        const response = await fetch(`${BASE_URL}/users/${userKey}/rank-match`, {
+        const response = await fetch(`${BASE_URL}/users/rank-match`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 토큰 추가
-          }
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
         });
     
         const data = await response.json();
@@ -220,11 +251,11 @@
     
       try {
         // 친선전 API 호출
-        const response = await fetch(`${BASE_URL}/users/${userKey}/select-match`, {
+        const response = await fetch(`${BASE_URL}/users/select-match`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 토큰 추가
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
           },
           body: JSON.stringify({ counterpart: nickname })
         });
@@ -271,6 +302,7 @@
 // 페이지 로드 시 랭킹 데이터를 가져옴
 window.addEventListener("load", fetchRanking);
 
+fetchUserInfo()
 
     </script>
 </body>

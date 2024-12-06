@@ -55,6 +55,7 @@ model Agents {
   agentKey Int        @id @default(autoincrement()) @map("agent_key")
   name     String     @map("name")
   team     String     @map("team")
+  url      String?    @map("url")
   position Pos        @map("position")
   grade    Grade      @map("grade")
   myAgent  MyAgents[]
