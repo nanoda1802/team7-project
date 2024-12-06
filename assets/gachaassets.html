@@ -204,7 +204,7 @@
 </head>
 <body>
 
-  <h1>픽업:가렌</h1><button class="button" id="agent-champion">다른 챔피언 확인</button>
+  <h1 id="pickupName"></h1><button class="button" id="agent-champion">챔피언 조회</button>
   <div id="card-container">
     <!-- 뽑기 결과 카드가 여기에 표시됩니다 -->
   </div>
@@ -244,7 +244,15 @@
 
   <script>
     const BASE_URL = 'http://localhost:9999/api';
-    const pickup = "3"; 
+
+    const pickup = JSON.parse(localStorage.getItem("pickupkey"));; 
+
+    console.log(JSON.parse(localStorage.getItem("pickupkey")));
+    console.log(JSON.parse(localStorage.getItem("pickupkey")));
+    
+    document.getElementById("pickupName").innerText = `${pickup.name}`;
+    
+   
 
 
     async function fetchUserInfo() {
@@ -323,6 +331,7 @@
         const result = await response.json();
 
         alert(`messag: ${result.message}`);
+        fetchAssets()
         closePopup(); // 팝업 닫기
       } catch (error) {
         console.error('API 호출 오류:', error);
@@ -403,8 +412,8 @@
     }
 
     // 버튼 클릭 이벤트
-    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup)); // 1뽑
-    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup)); // 10뽑
+    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup.key)); // 1뽑
+    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup.key)); // 10뽑
 
     // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
     async function fetchAssets() {
