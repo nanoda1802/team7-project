@@ -235,9 +235,10 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
       let enhancerCount = 0;
       let totalCost = 0;
       let totalMileage = 0;
+      const validCount = [1,10]
 
       // 횟수 확인
-      if (!count || isNaN(+count) || count <= 0) return res
+      if (!count || isNaN(+count) || !validCount.includes(count) ) return res
           .status(400)
           .json({
             errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
@@ -310,31 +311,20 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 
       // agent업데이트 트랜잭션
       async function updateMyAgentsTransaction(tx, userKey, agentKey, name) {
-        const existingAgent = await tx.myAgents.findFirst({
-          where: {
+        await tx.myAgents.upsert({
+          where: { userKey_agentKey : {userKey, agentKey}},
+          update: {
+            count: { increment: 1 }
+          },
+          create:{
             userKey: +userKey,
             agentKey,
-          },
-        });
-        if (existingAgent) {
-          await tx.myAgents.update({
-            where: { myAgentKey: existingAgent.myAgentKey },
-            data: {
-              count: { increment: 1 },
-            },
-          });
-        } else {
-          await tx.myAgents.create({
-            data: {
-              userKey: +userKey,
-              agentKey,
-              count: 1,
-              level: 1,
-              class: 0,
-              name,
-            },
-          });
-        }
+            count: 1,
+            level: 1,
+            class: 0,
+            name,
+          }
+        })
       }
 
       const results = await prisma.$transaction( async (tx) => {
@@ -427,36 +417,29 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 );
 
 // 챔피언 강화
-router.patch(
-  "/users/agents/intensify",
-  authMiddleware,
-  champVerification,
-  async (req, res) => {
+router.patch("/users/agents/intensify",authMiddleware,champVerification, async (req, res) => {
     try {
       const { user, agent } = req;
 
-      // 보유 에이전트 확인
-      const player = await prisma.myAgents.findFirst({
-        where: { agentKey: agent.agentKey, userKey: user.userKey },
-        include: {
-          agent: true, // 에이전트 정보 포함
-        },
-      });
-
-      if (!player || player.userKey !== user.userKey) {
-        return res
+      // 보유 챔피언 확인
+      const player = await prisma.myAgents.findFirst({where: { agentKey: agent.agentKey, userKey: user.userKey }})
+      if (!player) return res
           .status(404)
-          .json({ message: "보유하고 있는 선수가 아닙니다." });
-      }
+          .json({ errorMessage: "보유한 챔피언이 아닙니다" });
 
       const currentLevel = player.level;
-      if (currentLevel >= 15) {
-        return res.status(400).json({ message: "이미 15강입니다." });
-      }
+      if (currentLevel >= 15) return res
+        .status(401)
+        .json({ message: "이미 최대 강화에 도달한 챔피언 입니다!" });
 
       // 현재 강화 확률 계산
-      const successRate = getSuccessRate(currentLevel);
-      const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
+      let successRate
+      // 레벨마다 강화 확률 정하는 로직
+      if (currentLevel < 4) successRate = 90;
+      else if (currentLevel < 7) successRate = 70;
+      else if (currentLevel < 10) successRate = 50;
+      else if (currentLevel < 13) successRate = 25;
+      else successRate = 10;
 
       // 강화 시도 (확률에 따라 성공 여부 결정)
       const success = Math.random() < successRate; // 성공 확률
@@ -622,15 +605,7 @@ function getMaterials(level) {
   };
   return materials[level] || { enhancer: 0 };
 }
-// 레벨마다 강화 확률 정하는 로직
-function getSuccessRate(level) {
-  if (level >= 1 && level <= 3) return 0.9;
-  if (level >= 4 && level <= 6) return 0.7;
-  if (level >= 7 && level <= 9) return 0.5;
-  if (level >= 10 && level <= 12) return 0.25;
-  if (level >= 13 && level <= 15) return 0.1;
-  return 0; // 기본값
-}
+
 
 // 재료 차감 로직
 async function deductMaterials(userID, requiredMaterials) {
