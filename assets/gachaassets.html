@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가챠 및 보유 재화</title>
+  <link rel="stylesheet" href="gachastyles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* 중앙 정렬 */
+      justify-content: flex-start;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* 지갑 테이블 스타일 */
+    table {
+      width: 60%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #ffffff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+      font-size: 18px;
+      width: 33.3333333333%;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    td {
+      color: #555;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%; /* 화면 너비의 90%를 차지 */
+  max-width: 1200px; /* 최대 너비 제한 */
+  margin: 20px auto;
+}
+
+    /* 가챠 카드 스타일 */
+    #card-container {
+      display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* 카드 간 간격 */
+  justify-content: center;
+  width: 80%; /* 부모 컨테이너 너비에 맞춤 */
+  max-height: 330px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px; /* 내부 여백 */
+}
+
+.card-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+      }
+
+.card {
+  width: 250px;
+  height: 293.94px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 카드 이미지 */
+.card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+/* 카드 내용 */
+.card-content {
+  padding: 15px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.card-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
+    /* 버튼 스타일 */
+    button {
+      padding: 10px 20px;
+      margin:10px 10px 30px 10px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: #fff;
+      background-color: #007bff;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .popup input {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .popup div {
+      display: flex;
+      justify-content: space-between; /* 버튼을 가로로 배치 */
+      width: 100%; /* 팝업 내부의 전체 너비를 100%로 설정 */
+    }
+
+    .popup button {
+      width: 48%; /* 버튼 너비를 48%로 설정 */
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>픽업:가렌</h1><button class="button" id="agent-champion">다른 챔피언 확인</button>
+  <div id="card-container">
+    <!-- 뽑기 결과 카드가 여기에 표시됩니다 -->
+  </div>
+  <div id="button-container">
+    <button id="single-draw-btn">1뽑</button>
+    <button id="multi-draw-btn">10뽑</button>
+    <button id="chargeButton">캐쉬 충전</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>캐쉬</th>
+        <th>마일리지</th>
+        <th>재료</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td id="cash">-</td>
+        <td id="mileage">-</td>
+        <td id="enhancer">-</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="container">
+  <div class="overlay" id="overlay"></div>
+  <div class="popup" id="popup">
+    <h2>충전할 금액 입력</h2>
+    <input type="number" id="cashAmount" placeholder="충전 금액 (원)">
+    <div>
+      <button id="confirmButton">확인</button>
+      <button id="cancelButton">취소</button>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'http://localhost:9999/api';
+    const pickup = "3"; 
+
+
+    async function fetchUserInfo() {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    alert("로그인이 필요합니다.");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/users`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+    } else {
+      alert("인증에 실패했습니다. 다시 로그인하세요.");
+      localStorage.removeItem("authToken");
+      window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    }
+  } catch (error) {
+    console.error("유저 정보를 가져오는 중 오류 발생:", error);
+    alert("오류가 발생했습니다. 다시 로그인하세요.");
+    localStorage.removeItem("authToken");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+  }
+}
+
+    const cardContainer = document.getElementById('card-container');
+    const singleDrawBtn = document.getElementById('single-draw-btn');
+    const multiDrawBtn = document.getElementById('multi-draw-btn');
+    const chargeButton = document.getElementById('chargeButton');
+    const popup = document.getElementById('popup');
+    const overlay = document.getElementById('overlay');
+    const confirmButton = document.getElementById('confirmButton');
+    const cancelButton = document.getElementById('cancelButton');
+    const cashAmountInput = document.getElementById('cashAmount');
+
+
+    // 팝업 열기
+    function openPopup() {
+      popup.style.display = 'block';
+      overlay.style.display = 'block';
+    }
+
+    // 팝업 닫기
+    function closePopup() {
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+      cashAmountInput.value = ''; // 입력 값 초기화
+    }
+
+    // 캐쉬 충전 함수
+    async function chargeCash(amount) {
+      try {
+        const response = await fetch(`${BASE_URL}/users/cash`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({ amount }) // 금액 전달
+        });
+
+        if (!response.ok) {
+          throw new Error('충전 실패');
+        }
+
+        const result = await response.json();
+
+        alert(`messag: ${result.message}`);
+        closePopup(); // 팝업 닫기
+      } catch (error) {
+        console.error('API 호출 오류:', error);
+        alert('충전에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+
+    // 버튼 이벤트
+    chargeButton.addEventListener('click', openPopup);
+    cancelButton.addEventListener('click', closePopup);
+    confirmButton.addEventListener('click', () => {
+      const amount = parseInt(cashAmountInput.value, 10);
+      if (isNaN(amount) || amount <= 0) {
+        alert('유효한 금액을 입력해주세요.');
+        return;
+      }
+      chargeCash(amount);
+      fetchAssets()
+    });
+
+    // API 요청 함수
+    async function fetchGachaResults(count, pickup) {
+      try {
+        const response = await fetch(`${BASE_URL}/users/agents/gacha`, {
+          method: "PATCH",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+          body: JSON.stringify({count, pickup}),
+        });
+
+        
+        if (!response.ok) {
+          throw new Error("가챠 요청 실패!");
+        }
+        const { results } = await response.json();
+        console.log(results[0].agent)
+        displayCards(results);
+
+        fetchAssets();
+      } catch (error) {
+        console.error(error);
+        alert(`가챠 결과를 불러오는 데 실패했습니다.`);
+      }
+    }
+
+    // 카드 DOM 생성 및 표시
+    function displayCards(results) {
+      cardContainer.innerHTML = ""; // 기존 카드 초기화
+      results.forEach((result) => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+
+        // 강화재료 처리
+        if (result.agent === "enhancer") {
+          card.innerHTML = `
+            <div class="card-header">강화 재료</div>
+            <div class="card-body">
+              <span>등급: 재료</span>
+            </div>
+          `;
+        } else {
+          card.innerHTML = `
+          <img src="${result.agent.url}" alt="${result.agent.name}" class="card-image" />
+        <div class="card-content">
+          <h2 class="card-title">${result.agent.name} ${result.agent.grade}급</h2>
+          <p class="card-description">포지션: ${result.agent.position}<br>팀: ${result.agent.team}</p>
+        </div>
+          `;
+        }
+
+        cardContainer.appendChild(card);
+      });
+    }
+
+    // 버튼 클릭 이벤트
+    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup)); // 1뽑
+    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup)); // 10뽑
+
+    // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
+    async function fetchAssets() {
+      try {
+        const response = await fetch(`${BASE_URL}/users/assets`, {
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          }
+        });
+
+        if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
+
+        const { data } = await response.json();
+
+        // 테이블에 데이터를 채움
+        document.getElementById("cash").textContent = data.cash || 0;
+        document.getElementById("mileage").textContent = data.mileage || 0;
+        document.getElementById("enhancer").textContent = data.enhancer || 0;
+      } catch (error) {
+        console.error(error);
+        alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+      }
+    }
+
+    document.getElementById("agent-champion").addEventListener("click", () => {
+  window.location.href = "agent.html";
+});
+fetchUserInfo()
+    // 페이지 로드 시 재화 데이터를 가져옴
+    window.addEventListener("load", fetchAssets);
+  </script>
+  
+</body>
+</html>
