@@ -64,13 +64,6 @@ router.post("/agents", async (req, res, next) => {
     // 동적 쿼리 실행
     const showAgents = await prisma.agents.findMany({
       where: whereCondition,
-      select: {
-        name: true,
-        team: true,
-        position: true,
-        grade: true,
-        url:true,
-      },
       orderBy: [orderByCondition], // 동적으로 생성된 orderBy 조건 사용
     });
 
@@ -320,20 +313,23 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         // 기본 균등 확률
    
         // 가중치 설정 prob1 = pickup 확률 prob2 = 나머지 s급 확률
-        const prob1 = 65;
-        const prob2 = (100 - prob1) / agents.length - 1 ;
+        const prob1 = 55;
+        const prob2 = Math.trunc((100 - prob1) / (agents.length - 1));
         // 확률 계산
-        const weights = agents.map((agent) => agent.agentKey === pickup ? prob1 : prob2); 
+        const weights = agents.map((agent) => agent.agentKey === +pickup ? prob1 : prob2); 
         const random = Math.trunc(Math.random() * 100) 
 
         let cumulative = 0; // 이제 가중치를 모아서 어느수에 걸치는지 파악하기 위한 변수.
+
         for (let i = 0; i < agents.length; i++) {
           cumulative += weights[i]; //가중치를 모은다.
           if (random <= cumulative) {
             // 가중치가 랜덤에 걸렸을때.
+            
             return agents[i]; //그 가중치의 선수.
           }
         }
+        
         return agents[agents.length - 1]; //이건 만약 오류나면 그냥 마지막꺼 내놓음.
       }
 

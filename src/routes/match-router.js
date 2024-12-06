@@ -282,13 +282,23 @@ router.get('/users/ranks', async (req, res, next) => {
     take: 10
   })
 
+  const agents = await prisma.agents.findMany({
+    select: {
+      agentKey: true,
+      name: true,
+    },
+  });
+
+
   for (let i = 0; i < ranking.length; i++) {
+     const agent=agents.find((e) =>e.agentKey===ranking[i].user.favoriteAgent)||{name: "미설정"};
+
     const winningRate = Math.round(ranking[i].winCount / (ranking[i].winCount + ranking[i].loseCount + ranking[i].drawCount) * 100) || 0
     resJson = [...resJson,
     {
       rank: i + 1,
       nickname: ranking[i].user.nickname,
-      favoriteAgent: ranking[i].user.favoriteAgent,
+      favoriteAgent: agent.name,
       rankScore: ranking[i].mmr,
       winningRate: `${winningRate}%`,
       matchRecord: `${ranking[i].winCount} / ${ranking[i].loseCount} / ${ranking[i].drawCount} `

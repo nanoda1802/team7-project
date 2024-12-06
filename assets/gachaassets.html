@@ -72,7 +72,7 @@
   gap: 20px; /* 카드 간 간격 */
   justify-content: center;
   width: 80%; /* 부모 컨테이너 너비에 맞춤 */
-  max-height: 330px;
+  max-height: 55vh;
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 10px;
@@ -99,6 +99,7 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-align: center;
   cursor: pointer;
+  height: 350px;
   margin-top: 20px;
 }
 
@@ -110,19 +111,21 @@
 /* 카드 이미지 */
 .card-image {
   width: 100%;
-  height: 150px;
+  height: 250px;
+  object-position: center top;
   object-fit: cover;
 }
 
 /* 카드 내용 */
 .card-content {
-  padding: 15px;
+  margin: 10px
 }
 
 .card-title {
   font-size: 18px;
   font-weight: bold;
   color: #333;
+  margin-top: auto;
   margin-bottom: 10px;
 }
 
@@ -201,7 +204,7 @@
 </head>
 <body>
 
-  <h1>픽업:가렌</h1><button class="button" id="agent-champion">다른 챔피언 확인</button>
+  <h1 id="pickupName"></h1><button class="button" id="agent-champion">챔피언 조회</button>
   <div id="card-container">
     <!-- 뽑기 결과 카드가 여기에 표시됩니다 -->
   </div>
@@ -241,7 +244,15 @@
 
   <script>
     const BASE_URL = 'http://localhost:9999/api';
-    const pickup = "3"; 
+
+    const pickup = JSON.parse(localStorage.getItem("pickupkey"));; 
+
+    console.log(JSON.parse(localStorage.getItem("pickupkey")));
+    console.log(JSON.parse(localStorage.getItem("pickupkey")));
+    
+    document.getElementById("pickupName").innerText = `${pickup.name}`;
+    
+   
 
 
     async function fetchUserInfo() {
@@ -320,6 +331,7 @@
         const result = await response.json();
 
         alert(`messag: ${result.message}`);
+        fetchAssets()
         closePopup(); // 팝업 닫기
       } catch (error) {
         console.error('API 호출 오류:', error);
@@ -377,10 +389,13 @@
         // 강화재료 처리
         if (result.agent === "enhancer") {
           card.innerHTML = `
-            <div class="card-header">강화 재료</div>
+          <img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/90b5d5184cec068923b26231f963dd6637a2c526-1920x1080.jpg?auto=format&fit=fill&q=80&w=1302" alt="강화재료" class="card-image" />
+          <div class="card-content">  
+            <h2 class="card-title">강화 재료</h2>
             <div class="card-body">
-              <span>등급: 재료</span>
+              <p class="card-description">등급: 재료</p>
             </div>
+          </div>
           `;
         } else {
           card.innerHTML = `
@@ -397,8 +412,8 @@
     }
 
     // 버튼 클릭 이벤트
-    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup)); // 1뽑
-    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup)); // 10뽑
+    singleDrawBtn.addEventListener("click", () => fetchGachaResults("1", pickup.key)); // 1뽑
+    multiDrawBtn.addEventListener("click", () => fetchGachaResults("10", pickup.key)); // 10뽑
 
     // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
     async function fetchAssets() {
