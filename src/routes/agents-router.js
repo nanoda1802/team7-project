@@ -64,13 +64,6 @@ router.post("/agents", async (req, res, next) => {
     // 동적 쿼리 실행
     const showAgents = await prisma.agents.findMany({
       where: whereCondition,
-      select: {
-        name: true,
-        team: true,
-        position: true,
-        grade: true,
-        url:true,
-      },
       orderBy: [orderByCondition], // 동적으로 생성된 orderBy 조건 사용
     });
 
