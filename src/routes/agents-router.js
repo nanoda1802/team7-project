@@ -265,8 +265,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
       if (userAssets.cash < totalCost)return res
         .status(400)
         .json({ errorMessage: "캐시가 부족합니다." });
-      let countA = userAssets.countA;
-      let countS = userAssets.countS;
+      let { countA,countS } = userAssets;
 
       // 총 챔피언 조회
       const agents = await prisma.agents.findMany({
@@ -287,10 +286,9 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 
       // 등급별 챔피언 랜덤 설정
       function getRandomAgent(agents, pickup = null) {
-        if (!pickup) {
-          // 기본 균등 확률
-          return agents[Math.trunc(Math.random() * agents.length)];
-        }
+        if (!pickup) return agents[Math.trunc(Math.random() * agents.length)];
+        // 기본 균등 확률
+   
         // 가중치 설정 prob1 = pickup 확률 prob2 = 나머지 s급 확률
         const prob1 = 65;
         const prob2 = (100 - prob1) / agents.length - 1 ;
@@ -324,7 +322,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             class: 0,
             name,
           }
-        })
+        }) 
       }
 
       const results = await prisma.$transaction( async (tx) => {
@@ -365,12 +363,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             countA = 0;
             countS++;
             results.push({ agent: selectedAgent, countS, countA });
-            await updateMyAgentsTransaction(
-              tx,
-              user.userKey,
-              selectedAgent.agentKey,
-              selectedAgent.name
-            );
+            await updateMyAgentsTransaction(tx,user.userKey,selectedAgent.agentKey,selectedAgent.name);
           // 기본 S급 챔피언 확률
           } else {
             //픽업 확률 적용
@@ -390,7 +383,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             enhancer: { increment: enhancerCount },
             countA: countA,
             countS: countS,
-            mileage: { increment: totalMileage },
           },
         });
         return results;
@@ -461,6 +453,7 @@ router.patch("/users/agents/intensify",authMiddleware,champVerification, async (
     // 보유 재료 확인
     const asset = await prisma.assets.findFirst({where: { userKey: user.userKey }});
     let balanceEnhancer = asset.enhancer - requiredEnhancer
+
     // 강화 재료가 부족한 경우
     // 강화 재료가 충분할 경우 강화 재료 사용
     if (balanceEnhancer < 0) {
@@ -515,8 +508,7 @@ router.patch("/users/agents/intensify",authMiddleware,champVerification, async (
         }
       },
       include: {
-        asset: true,
-        myAgent: true,
+        asset: true
       }
     });
 
