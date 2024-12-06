@@ -418,116 +418,125 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 
 // 챔피언 강화
 router.patch("/users/agents/intensify",authMiddleware,champVerification, async (req, res) => {
-    try {
-      const { user, agent } = req;
+  try {
+    const { user, agent } = req;
 
-      // 보유 챔피언 확인
-      const player = await prisma.myAgents.findFirst({where: { agentKey: agent.agentKey, userKey: user.userKey }})
-      if (!player) return res
-          .status(404)
-          .json({ errorMessage: "보유한 챔피언이 아닙니다" });
+    // 보유 챔피언 확인
+    const myAgent = await prisma.myAgents.findFirst({ where: { agentKey: agent.agentKey, userKey: user.userKey } })
+    if (!myAgent) return res
+      .status(404)
+      .json({ errorMessage: "현재 보유한 챔피언이 아닙니다" });
 
-      const currentLevel = player.level;
-      if (currentLevel >= 15) return res
-        .status(401)
-        .json({ message: "이미 최대 강화에 도달한 챔피언 입니다!" });
-
-      // 현재 강화 확률 계산
-      let successRate
-      // 레벨마다 강화 확률 정하는 로직
-      if (currentLevel < 4) successRate = 90;
-      else if (currentLevel < 7) successRate = 70;
-      else if (currentLevel < 10) successRate = 50;
-      else if (currentLevel < 13) successRate = 25;
-      else successRate = 10;
-
-      // 강화 시도 (확률에 따라 성공 여부 결정)
-      const success = Math.random() < successRate; // 성공 확률
-      let nextLevel = currentLevel;
-      let message = ""; // 메시지 초기화
-      let warningMessage = "9강 이하에서는 강화레벨이 하락하지 않습니다!!"; // 경고 메시지 초기화
-
-      if (currentLevel >= 10) {
-        warningMessage = "주의! 10강부터 강화실패하면 레벨이 1 떨어집니다!!";
-      }
-
-      if (success) {
-        nextLevel = currentLevel + 1; // 성공 시 레벨 증가
-        message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 성공했습니다!`;
-      } else {
-        // 실패 시 10강 이상일 경우 레벨 감소
-        if (currentLevel >= 10) {
-          nextLevel = Math.max(currentLevel - 1, 0); // 레벨이 0 미만으로 떨어지지 않도록
-          message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했으므로 레벨이 떨어졌습니다.`;
-        } else {
-          message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했습니다.`;
-        }
-      }
-
-      // 보유 재료 확인
-      const materials = await prisma.assets.findFirst({
-        where: { userKey: user.userKey },
-      });
-
-      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-      //       그 모든걸 저장      현재 강화 재료갯수  >=    강화에 필요한 강화 재료 갯수
-      const hasEnoughEnhancer =
-        materials.enhancer >= requiredMaterials.enhancer; // 강화재료 부족한지 아님 가능한지 확인해주는 함수
-
-      // 강화 재료가 부족한 경우
-      if (!hasEnoughEnhancer) {
-        //마일리지 갯수 확인
-        if (materials.mileage < 100 * requiredMaterials.enhancer) {
-          return res.status(400).json({
-            message:
-              "강화 재료가 부족하고 마일리지도 부족해 강화진행을 못합니다!!",
-          });
-        } else {
-          // 마일리지 사용 (레벨이 오름)
-          // 마일리지는 강화재료의 * 100 개 사용
-          await prisma.$transaction(async (prisma) => {
-            await prisma.myAgents.update({
-              where: {
-                myAgentKey: player.myAgentKey,
-              },
-              data: { level: nextLevel },
-            });
-            await prisma.assets.update({
-              where: { userKey: user.userKey },
-              data: {
-                mileage: { decrement: 100 * requiredMaterials.enhancer },
-              },
-            });
-          });
-        }
-      } else {
-        // 강화 재료가 충분할 경우 강화 재료 사용
-        // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
-        await prisma.$transaction(async (prisma) => {
-          await prisma.myAgents.update({
-            where: {
-              myAgentKey: player.myAgentKey,
-            },
-            data: { level: nextLevel },
-          });
-          await deductMaterials(user.userKey, requiredMaterials);
-        });
-      }
-
-      // 강화 시도 완료 시 상태코드와 강화 결과 반환
-      return res.status(201).json({
-        message: message,
-        warnig: warningMessage, // 떨어질수도 있단 경고 메시지 추가
-        successRate: `${successRatePercentage}%`, // 퍼센트로 보이게 변경
-        currentMaterials: materials.enhancer, // 현재 보유한 강화 재료 수량 표시
-        currentMileage: materials.mileage - (hasEnoughEnhancer ? 0 : 100), // 현재 마일리지 표시
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "서버 오류가 발생했습니다." });
+    const currentLevel = myAgent.level;
+    let nextLevel = currentLevel;
+    let successRate = 0; // 강화 확률
+    let requiredEnhancer = 0; // 강화에 필요한 재료
+    let message = ""; // 메시지 초기화
+    let warningMessage = "9강 이하에서는 강화레벨이 하락하지 않습니다!!"; // 경고 메시지 초기화
+    // 레벨마다 강화 확률, 필요 재료 정하는 로직
+    if (currentLevel > 12) {
+      successRate = 10;
+      requiredEnhancer = 7
+    } else if (currentLevel > 9) {
+      warningMessage = "주의! 10강부터 강화실패하면 레벨이 1 떨어집니다!!";
+      successRate = 25;
+      requiredEnhancer = 6
+    } else if (currentLevel > 6) {
+      successRate = 50;
+      requiredEnhancer = 5
+    } else if (currentLevel > 3) {
+      successRate = 70;
+      requiredEnhancer = 3
+    } else if (currentLevel > 0){
+      successRate = 90;
+      requiredEnhancer = 1
     }
+    // 강화 시도 (확률에 따라 성공 여부 결정)
+    const success = (Math.random() * 100) < successRate; // 성공 여부
+
+    if (currentLevel >= 15) return res
+      .status(401)
+      .json({ message: "이미 최대 강화에 도달한 챔피언 입니다!" });
+
+    // 보유 재료 확인
+    const asset = await prisma.assets.findFirst({where: { userKey: user.userKey }});
+    let balanceEnhancer = asset.enhancer - requiredEnhancer
+    // 강화 재료가 부족한 경우
+    // 강화 재료가 충분할 경우 강화 재료 사용
+    if (balanceEnhancer < 0) {
+      //마일리지 100 당 강화 재료 1개로 인식하여 부족분 충족 확인
+      if (Math.trunc(asset.mileage / 100) < -balanceEnhancer) return res
+        .status(400)
+        .json({
+          message:"강화 재료가 부족합니다!!",
+          needOr: { 
+            enhancer: `${asset.enhancer} / ${requiredEnhancer}`,
+            mileage: `${asset.mileage} / ${requiredEnhancer * 100}`
+          }
+        });
+      else {
+        //마일리지 감소된 값 저장
+        asset.mileage -= (-balanceEnhancer) * 100
+        balanceEnhancer = 0
+      }
+    }
+    console.log(-balanceEnhancer)
+
+    if (success) {
+      nextLevel++ ; // 성공 시 레벨 증가
+      message = `${agent.name}(이)가 ${nextLevel}강 강화에 성공했습니다!`;
+    } else {
+      // 실패 시 10강 이상일 경우 레벨 감소
+      if (currentLevel >= 10) {
+        nextLevel--
+        message = `${agent.name}(이)가 강화가 실패해 ${nextLevel}강으로 떨어졌습니다.`;
+      } else {
+        message = "강화에 실패했습니다.";
+      }
+    }
+
+    const updateUser = await prisma.users.update({
+      where: { userKey: user.userKey },
+      data: {
+        asset: {
+          update: {
+            data: {
+              enhancer: balanceEnhancer,
+              mileage: asset.mileage
+            }
+          }
+        },
+        myAgent: {
+          update: {
+            where: { userKey_agentKey: { userKey: user.userKey, agentKey: agent.agentKey } },
+            data: {
+              level: nextLevel
+            }
+          }
+        }
+      },
+      include: {
+        asset: true,
+        myAgent: true,
+      }
+    });
+
+    // 강화 시도 완료 시 상태코드와 강화 결과 반환
+    return res.status(201).json({
+      message: message,
+      warning: warningMessage, // 떨어질수도 있단 경고 메시지 추가
+      successRate: `${successRate}%`, // 퍼센트로 보이게 변경
+      enhancer: updateUser.asset.enhancer, // 현재 보유한 강화 재료 수량 표시
+      mileage: updateUser.asset.mileage, // 현재 마일리지 표시
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "서버 오류가 발생했습니다." });
   }
-);
+});
 
 // 챔피언 승급
 router.patch("/users/agents/promote", authMiddleware, champVerification, async (req, res) => {
@@ -577,47 +586,6 @@ router.patch("/users/agents/promote", authMiddleware, champVerification, async (
       res.status(500).json({ message: "서버 오류가 발생했습니다." });
     }
   }
-);
-
-// 필요한 재료 확인 함수
-function checkMaterials(materials, requiredMaterials) {
-  return materials.enhancer >= requiredMaterials.enhancer;
-}
-
-// 강화에 필요한 재료를 가져오는 함수
-function getMaterials(level) {
-  const materials = {
-    1: { enhancer: 1 },
-    2: { enhancer: 1 },
-    3: { enhancer: 1 },
-    4: { enhancer: 3 },
-    5: { enhancer: 3 },
-    6: { enhancer: 3 },
-    7: { enhancer: 5 },
-    8: { enhancer: 5 },
-    9: { enhancer: 5 },
-    10: { enhancer: 6 },
-    11: { enhancer: 6 },
-    12: { enhancer: 6 },
-    13: { enhancer: 7 },
-    14: { enhancer: 7 },
-    15: { enhancer: 7 },
-  };
-  return materials[level] || { enhancer: 0 };
-}
-
-
-// 재료 차감 로직
-async function deductMaterials(userID, requiredMaterials) {
-  // 재료 차감 로직 구현
-  await prisma.assets.update({
-    where: { userKey: userID },
-    data: {
-      enhancer: { decrement: requiredMaterials.enhancer },
-    },
-  });
-}
-
-
+});
 
 export default router;
