@@ -18,22 +18,18 @@ router.post("/agents", async (req, res, next) => {
       // showHow 유효성 검사
       const validShowHow = ["team", "position", "grade"];
       if (!validShowHow.includes(showHow))
-        return res
-          .status(400)
-          .json({
-            errorMessage: `유효하지 않은 showHow 값입니다. 목록: [${validShowHow.join(", ")}]`,
-          });
+        return res.status(400).json({
+          errorMessage: `유효하지 않은 showHow 값입니다. 목록: [${validShowHow.join(", ")}]`,
+        });
 
       // showWhat 유효성 검사
       const validShowWhat = await prisma
         .$queryRawUnsafe(`SELECT ${showHow} FROM Agents GROUP BY 1`)
         .then((what) => what.map((e) => Object.values(e)[0]));
       if (!validShowWhat.includes(showWhat))
-        return res
-          .status(400)
-          .json({
-            errorMessage: `유효하지 않은 showWhat 값입니다. 목록: [${validShowWhat.join(", ")}]`,
-          });
+        return res.status(400).json({
+          errorMessage: `유효하지 않은 showWhat 값입니다. 목록: [${validShowWhat.join(", ")}]`,
+        });
 
       // 기본 쿼리 설정
       whereCondition = { [showHow]: showWhat };
@@ -42,20 +38,16 @@ router.post("/agents", async (req, res, next) => {
       // orderBy 유효성 검사
       const validOrderBy = ["name", "position", "grade", "team"];
       if (!validOrderBy.includes(orderBy))
-        return res
-          .status(400)
-          .json({
-            errorMessage: `유효하지 않은 orderBy 값입니다. 목록: [${validOrderBy.join(", ")}]`,
-          });
+        return res.status(400).json({
+          errorMessage: `유효하지 않은 orderBy 값입니다. 목록: [${validOrderBy.join(", ")}]`,
+        });
 
       // orderHow 유효성 검사
       const validOrderHow = ["asc", "desc"];
       if (orderHow && !validOrderHow.includes(orderHow))
-        return res
-          .status(400)
-          .json({
-            errorMessage: `유효하지 않은 orderHow 값입니다. 목록: [${validOrderHow.join(", ")}]`,
-          });
+        return res.status(400).json({
+          errorMessage: `유효하지 않은 orderHow 값입니다. 목록: [${validOrderHow.join(", ")}]`,
+        });
 
       // 기본값은 이름순 정렬
       orderByCondition = { [orderBy]: orderHow || "asc" };
@@ -248,11 +240,9 @@ router.patch(
 
       // 횟수 확인
       if (!count || isNaN(+count) || count <= 0)
-        return res
-          .status(400)
-          .json({
-            errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
-          });
+        return res.status(400).json({
+          errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
+        });
 
       // 픽업 챔피언 확인
       if (agent.grade !== "s")
@@ -439,27 +429,15 @@ router.patch(
         return res.status(400).json({ message: "이미 15강입니다." });
       }
 
-      // 보유 재료 확인
-      const materials = await prisma.assets.findFirst({
-        where: { userKey: user.userKey },
-      });
       // 현재 강화 확률 계산
       const successRate = getSuccessRate(currentLevel);
       const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
-
-      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-      const hasEnoughEnhancer =
-        materials.enhancer >= requiredMaterials.enhancer;
-
-      if (!checkMaterials(materials, requiredMaterials)) {
-        return res.status(400).json({ message: "강화 재료가 부족합니다." });
-      }
 
       // 강화 시도 (확률에 따라 성공 여부 결정)
       const success = Math.random() < successRate; // 성공 확률
       let nextLevel = currentLevel;
       let message = ""; // 메시지 초기화
-      let warningMessage = ""; // 경고 메시지 초기화
+      let warningMessage = "9강 이하에서는 강화레벨이 하락하지 않습니다!!"; // 경고 메시지 초기화
 
       if (currentLevel >= 10) {
         warningMessage = "주의! 10강부터 강화실패하면 레벨이 1 떨어집니다!!";
@@ -477,17 +455,56 @@ router.patch(
           message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했습니다.`;
         }
       }
-      // level +ddd
-      // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
-      await prisma.$transaction(async (prisma) => {
-        await prisma.myAgents.update({
-          where: {
-            myAgentKey: player.myAgentKey,
-          },
-          data: { level: nextLevel },
-        });
-        await deductMaterials(user.userKey, requiredMaterials);
+
+      // 보유 재료 확인
+      const materials = await prisma.assets.findFirst({
+        where: { userKey: user.userKey },
       });
+
+      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
+      //       그 모든걸 저장      현재 강화 재료갯수  >=    강화에 필요한 강화 재료 갯수
+      const hasEnoughEnhancer =
+        materials.enhancer >= requiredMaterials.enhancer; // 강화재료 부족한지 아님 가능한지 확인해주는 함수
+
+      // 강화 재료가 부족한 경우
+      if (!hasEnoughEnhancer) {
+        //마일리지 갯수 확인
+        if (materials.mileage < 100 * requiredMaterials.enhancer) {
+          return res.status(400).json({
+            message:
+              "강화 재료가 부족하고 마일리지도 부족해 강화진행을 못합니다!!",
+          });
+        } else {
+          // 마일리지 사용 (레벨이 오름)
+          // 마일리지는 강화재료의 * 100 개 사용
+          await prisma.$transaction(async (prisma) => {
+            await prisma.myAgents.update({
+              where: {
+                myAgentKey: player.myAgentKey,
+              },
+              data: { level: nextLevel },
+            });
+            await prisma.assets.update({
+              where: { userKey: user.userKey },
+              data: {
+                mileage: { decrement: 100 * requiredMaterials.enhancer },
+              },
+            });
+          });
+        }
+      } else {
+        // 강화 재료가 충분할 경우 강화 재료 사용
+        // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
+        await prisma.$transaction(async (prisma) => {
+          await prisma.myAgents.update({
+            where: {
+              myAgentKey: player.myAgentKey,
+            },
+            data: { level: nextLevel },
+          });
+          await deductMaterials(user.userKey, requiredMaterials);
+        });
+      }
 
       // 강화 시도 완료 시 상태코드와 강화 결과 반환
       return res.status(201).json({
@@ -495,6 +512,7 @@ router.patch(
         warnig: warningMessage, // 떨어질수도 있단 경고 메시지 추가
         successRate: `${successRatePercentage}%`, // 퍼센트로 보이게 변경
         currentMaterials: materials.enhancer, // 현재 보유한 강화 재료 수량 표시
+        currentMileage: materials.mileage - (hasEnoughEnhancer ? 0 : 100), // 현재 마일리지 표시
       });
     } catch (error) {
       console.error(error);
