@@ -4,7 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>캐릭터 조회</title>
-    <link rel="stylesheet" href="agentstyles.css">
+    <style>
+      .card-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-color: #f4f4f9; /* 로그인 페이지 배경색과 일치 */
+  }
+
+  /* 카드 레이아웃 */
+  .card-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: center;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 120px;
+    height: 180px;
+    border: 2px solid #adb5bd;
+    border-radius: 10px;
+    background-color: #ffffff; /* 흰색 배경 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+    padding: 10px;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px); /* hover 시 위로 살짝 올라감 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 카드 상단 */
+  .card-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #212529;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  /* 카드 본문 */
+  .card-body {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: #495057;
+  }
+
+  /* 카드 하단 */
+  .card-footer {
+    font-size: 12px;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  .stars {
+    color: #ffc107; /* 별 색상 */
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .position {
+    font-size: 12px;
+    color: #6c757d; /* 포지션 색상 */
+  }
+
+  /* 재화 표시 */
+  .resources {
+    width: 90%;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 18px;
+    color: #343a40;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: "Noto Sans KR", sans-serif;
+  }
+    </style>
 </head>
 <body>
     <h1>캐릭터 조회</h1>
@@ -56,6 +144,91 @@
       </div>
   </div>
 
-  <script src="agentscript.js"></script>
+  <script>
+  const showHow = document.getElementById('showHow');
+    const showWhat = document.getElementById('showWhat');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const orderBy = document.getElementById('orderBy');
+    const orderHow = document.getElementById('orderHow');
+    const resultDiv = document.getElementById('result');
+    
+    // 첫 번째 선택창 변경 시 두 번째 선택창 옵션 업데이트
+    function updateSelect2Options() {
+        const value = showHow.value; // showHow 값을 가져옴
+        let options = [];
+    
+        // showHow 값에 따라 동적으로 옵션 설정
+        if (value === 'team') {
+            options = ['데마시아', '녹서스', '아이오니아', '공허', '타곤', '자운', '슈리마', '프렐요드'];
+        } else if (value === 'position') {
+            options = ['wizard', 'warrior', 'tanker'];
+        } else if (value === 'grade') {
+            options = ['s', 'a'];
+        }
+    
+        // showWhat의 기존 옵션 초기화 후 새 옵션 추가
+        showWhat.innerHTML = '';
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            showWhat.appendChild(opt);
+        });
+    }
+    
+    // showHow 변경 시 옵션 업데이트 이벤트 등록
+    showHow.addEventListener('change', updateSelect2Options);
+    
+    // 페이지 로드 시 초기 옵션 설정
+    updateSelect2Options();
+    
+    // 확인 버튼 클릭 시 동작
+    confirmBtn.addEventListener('click', async () => {
+       const BASE_URL = 'http://localhost:9999/api';
+        
+    
+        try {
+            // API 호출
+            const response = await fetch(`${BASE_URL}/agents`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ showHow : showHow.value, showWhat : showWhat.value, orderBy : orderBy.value, orderHow : orderHow.value }),
+            });
+    
+            if (!response.ok) {
+    throw new Error('데이터를 가져오는 데 실패했습니다.');
+    }
+    
+            const data = await response.json();
+    
+    
+            const cardContainer = document.getElementById('card-container');
+    
+            cardContainer.innerHTML = '';
+    
+    data.data.forEach(agent => {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.innerHTML = `
+      <div class="card-header">${agent.name}</div>
+      <div class="card-body">
+        <span>${agent.grade}</span>
+      </div>
+      <div class="card-footer">
+        <div class="position">포지션: ${agent.position}</div>
+      </div>
+    `;
+    cardContainer.appendChild(card);
+    });
+        } catch (err) {
+            console.error(err);
+            resultDiv.innerHTML = `<p style="color:red;">서버 오류 발생</p>`;
+        }
+    });
+    
+  </script>
+
 </body>
 </html>

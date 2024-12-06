@@ -1,103 +1,300 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>보유 재화</title>
+  <title>캐릭터 조회</title>
   <style>
+    /* 전체 배경 */
     body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
+      font-family: "Noto Sans KR", sans-serif;
       background-color: #f4f4f9;
-      text-align: center;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
 
+    /* 제목 스타일 */
     h1 {
-      font-size: 26px;
-      color: #333;
       margin-bottom: 20px;
-    }
-
-    table {
-      width: 60%;
-      margin: 0 auto;
-      border-collapse: collapse;
-      background: #ffffff;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border-radius: 12px;
-    }
-
-    th, td {
-      padding: 15px;
-      border: 1px solid #ddd;
+      font-size: 32px;
+      color: #343a40;
       text-align: center;
-      font-size: 18px;
-      width: 33.3333333333%;
     }
 
-    th {
+    /* 검색 섹션 */
+    .search-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #ffffff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      gap: 15px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    /* 각 필드 레이블 및 입력 */
+    .field {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    label {
+      font-size: 14px;
+      color: #495057;
+      margin-bottom: 5px;
+    }
+
+    select {
+      padding: 8px;
+      border: 1px solid #adb5bd;
+      border-radius: 5px;
+      font-size: 14px;
+      color: #495057;
+      background-color: #ffffff;
+      transition: border-color 0.3s ease;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+
+    /* 조회 버튼 */
+    .confirm-btn {
+      width: 100%;
+      max-width: 200px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #ffffff;
       background-color: #007bff;
-      color: white;
-      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
-    td {
-      color: #555;
+    .confirm-btn:hover {
+      background-color: #0056b3;
+      transform: translateY(-2px);
     }
 
-    tr:nth-child(even) {
-      background-color: #f9f9f9;
+    /* 카드 영역 */
+    .card-container {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px auto;
+      width: 80%;
+      height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
+    .card-grid {
+        display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    justify-content: center;
+    }
+
+    .card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 120px;
+    height: 180px;
+    border: 2px solid #adb5bd;
+    border-radius: 10px;
+    background-color: #ffffff; /* 흰색 배경 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+    padding: 10px;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px); /* hover 시 위로 살짝 올라감 */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 카드 상단 */
+  .card-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #212529;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  /* 카드 본문 */
+  .card-body {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    color: #495057;
+  }
+
+  /* 카드 하단 */
+  .card-footer {
+    font-size: 12px;
+    font-family: "Noto Sans KR", sans-serif;
+  }
+
+  .stars {
+    color: #ffc107; /* 별 색상 */
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .position {
+    font-size: 12px;
+    color: #6c757d; /* 포지션 색상 */
+  }
+
   </style>
 </head>
 <body>
-  <table>
-    <thead>
-      <tr>
-        <th>캐쉬</th>
-        <th>마일리지</th>
-        <th>재료</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td id="cash">-</td>
-        <td id="mileage">-</td>
-        <td id="enhancer">-</td>
-      </tr>
-    </tbody>
-  </table>
+  <h1>캐릭터 조회</h1>
+  
+  <!-- 검색 기능 -->
+  <div class="search-container">
+    <div class="field">
+      <label for="showHow">분류 기준 (showHow):</label>
+      <select id="showHow">
+        <option value="team">팀</option>
+        <option value="position">포지션</option>
+        <option value="grade">등급</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="showWhat">값 (showWhat):</label>
+      <select id="showWhat">
+        <!-- 선택지는 JavaScript로 동적으로 변경됨 -->
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="orderBy">정렬 기준 (orderBy):</label>
+      <select id="orderBy">
+        <option value="name">이름</option>
+        <option value="position">포지션</option>
+        <option value="grade">등급</option>
+        <option value="team">팀</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="orderHow">정렬 방향 (orderHow):</label>
+      <select id="orderHow">
+        <option value="asc">오름차순</option>
+        <option value="desc">내림차순</option>
+      </select>
+    </div>
+
+    <button class="confirm-btn" id="confirmBtn">조회</button>
+  </div>
+
+  <!-- 결과 표시 -->
+  <div class="card-container">
+    <div class="card-grid" id="card-container">
+      <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
+    </div>
+  </div>
 
   <script>
-    const BASE_URL = 'http://localhost:9999/api'; // API 엔드포인트
-    const userKey = 4; // 유저 키 (예시)
+    const showHow = document.getElementById('showHow');
+    const showWhat = document.getElementById('showWhat');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const orderBy = document.getElementById('orderBy');
+    const orderHow = document.getElementById('orderHow');
+    const cardContainer = document.getElementById('card-container');
 
-    // API를 호출하여 보유 재화 데이터를 가져오고, UI를 업데이트하는 함수
-    async function fetchAssets() {
-      try {
-        const response = await fetch(`${BASE_URL}/users/${userKey}/assets`, {
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}`, // 인증 토큰
-          }
-        });
+    // 첫 번째 선택창 변경 시 두 번째 선택창 옵션 업데이트
+    function updateSelect2Options() {
+      const value = showHow.value;
+      let options = [];
 
-        if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
-
-        const { data } = await response.json();
-
-        // 테이블에 데이터를 채움
-        document.getElementById("cash").textContent = data.cash || 0;
-        document.getElementById("mileage").textContent = data.mileage || 0;
-        document.getElementById("enhancer").textContent = data.enhancer || 0;
-      } catch (error) {
-        console.error(error);
-        alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+      if (value === 'team') {
+        options = ['데마시아', '녹서스', '아이오니아', '공허', '타곤', '자운', '슈리마', '프렐요드'];
+      } else if (value === 'position') {
+        options = ['wizard', 'warrior', 'tanker'];
+      } else if (value === 'grade') {
+        options = ['s', 'a'];
       }
+
+      showWhat.innerHTML = '';
+      options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option;
+        opt.textContent = option;
+        showWhat.appendChild(opt);
+      });
     }
 
-    // 페이지 로드 시 재화 데이터를 가져옴
-    window.addEventListener("load", fetchAssets);
+    // 옵션 업데이트
+    showHow.addEventListener('change', updateSelect2Options);
+    updateSelect2Options();
+
+    // 조회 버튼 클릭 시 동작
+    confirmBtn.addEventListener('click', async () => {
+      const BASE_URL = 'http://localhost:9999/api';
+      try {
+        const response = await fetch(`${BASE_URL}/agents`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            showHow: showHow.value,
+            showWhat: showWhat.value,
+            orderBy: orderBy.value,
+            orderHow: orderHow.value,
+          }),
+        });
+
+        if (!response.ok) throw new Error('데이터를 가져오는 데 실패했습니다.');
+
+        const data = await response.json();
+        cardContainer.innerHTML = '';
+
+        data.data.forEach(agent => {
+          const card = document.createElement('div');
+          card.classList.add('card');
+          card.innerHTML = `
+            <div class="card-header">${agent.name}</div>
+            <div class="card-body">
+              <span>${agent.grade}</span>
+            </div>
+            <div class="card-footer">
+              <div class="position">포지션: ${agent.position}</div>
+            </div>
+          `;
+          cardContainer.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    });
   </script>
 </body>
 </html>
