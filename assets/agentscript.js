@@ -38,7 +38,7 @@ updateSelect2Options();
 // 확인 버튼 클릭 시 동작
 confirmBtn.addEventListener('click', async () => {
    const BASE_URL = 'http://localhost:9999/api';
-    const option = `${showHow.value},${showWhat.value},${orderBy.value},${orderHow.value}`;
+    
 
     try {
         // API 호출
@@ -47,7 +47,7 @@ confirmBtn.addEventListener('click', async () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ option }),
+            body: JSON.stringify({ showHow : showHow.value, showWhat : showWhat.value, orderBy : orderBy.value, orderHow : orderHow.value }),
         });
 
         if (!response.ok) {
