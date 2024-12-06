@@ -480,7 +480,6 @@ router.patch("/users/agents/intensify",authMiddleware,champVerification, async (
         balanceEnhancer = 0
       }
     }
-    console.log(-balanceEnhancer)
 
     if (success) {
       nextLevel++ ; // 성공 시 레벨 증가
