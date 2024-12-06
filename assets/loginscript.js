@@ -27,6 +27,7 @@ document.getElementById("signInForm").addEventListener("submit", async (e) => {
       
 
       alert(result.message);
+      window.location.href = "mainpage.html";
     } else {
       alert(result.message || "로그인에 실패했습니다.");
     }

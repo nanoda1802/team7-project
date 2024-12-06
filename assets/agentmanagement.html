@@ -653,7 +653,6 @@
     }
   }
 
-  //매각카운트 
   function openCountPopup(agent) {
   const countPopup = document.getElementById('count-popup');
   const sellCountInput = document.getElementById('sell-count');
@@ -682,7 +681,6 @@
   };
 }
 
-//매각
 async function handleSell(agentKey, count) {
   try {
     const response = await fetch(`${BASE_URL}/users/agents/sale`, {
@@ -742,9 +740,6 @@ if (!agents || agents.length === 0) {
 
 // 팝업 오버레이 클릭 시 닫기
 document.getElementById('popup-overlay').addEventListener('click', closePopup);
-
-
-
 
 // 초기 실행
     loadAgents();
