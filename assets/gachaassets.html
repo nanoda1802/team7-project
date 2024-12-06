@@ -138,17 +138,67 @@
     button:hover {
       background-color: #0056b3;
     }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .popup input {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .popup div {
+      display: flex;
+      justify-content: space-between; /* 버튼을 가로로 배치 */
+      width: 100%; /* 팝업 내부의 전체 너비를 100%로 설정 */
+    }
+
+    .popup button {
+      width: 48%; /* 버튼 너비를 48%로 설정 */
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 999;
+    }
   </style>
 </head>
 <body>
 
-  <h1>픽업:가렌</h1>
+  <h1>픽업:가렌</h1><button class="button" id="agent-champion">다른 챔피언 확인</button>
   <div id="card-container">
     <!-- 뽑기 결과 카드가 여기에 표시됩니다 -->
   </div>
   <div id="button-container">
     <button id="single-draw-btn">1뽑</button>
     <button id="multi-draw-btn">10뽑</button>
+    <button id="chargeButton">캐쉬 충전</button>
   </div>
   <table>
     <thead>
@@ -166,13 +216,119 @@
       </tr>
     </tbody>
   </table>
+</div>
+
+<div class="container">
+  <div class="overlay" id="overlay"></div>
+  <div class="popup" id="popup">
+    <h2>충전할 금액 입력</h2>
+    <input type="number" id="cashAmount" placeholder="충전 금액 (원)">
+    <div>
+      <button id="confirmButton">확인</button>
+      <button id="cancelButton">취소</button>
+    </div>
+  </div>
+
   <script>
     const BASE_URL = 'http://localhost:9999/api';
     const pickup = "3"; 
 
+
+    async function fetchUserInfo() {
+  const token = localStorage.getItem("authToken");
+
+  if (!token) {
+    alert("로그인이 필요합니다.");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    return;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/users`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+    } else {
+      alert("인증에 실패했습니다. 다시 로그인하세요.");
+      localStorage.removeItem("authToken");
+      window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+    }
+  } catch (error) {
+    console.error("유저 정보를 가져오는 중 오류 발생:", error);
+    alert("오류가 발생했습니다. 다시 로그인하세요.");
+    localStorage.removeItem("authToken");
+    window.location.href = "login.html"; // 로그인 페이지로 리다이렉트
+  }
+}
+
     const cardContainer = document.getElementById('card-container');
     const singleDrawBtn = document.getElementById('single-draw-btn');
     const multiDrawBtn = document.getElementById('multi-draw-btn');
+    const chargeButton = document.getElementById('chargeButton');
+    const popup = document.getElementById('popup');
+    const overlay = document.getElementById('overlay');
+    const confirmButton = document.getElementById('confirmButton');
+    const cancelButton = document.getElementById('cancelButton');
+    const cashAmountInput = document.getElementById('cashAmount');
+
+
+    // 팝업 열기
+    function openPopup() {
+      popup.style.display = 'block';
+      overlay.style.display = 'block';
+    }
+
+    // 팝업 닫기
+    function closePopup() {
+      popup.style.display = 'none';
+      overlay.style.display = 'none';
+      cashAmountInput.value = ''; // 입력 값 초기화
+    }
+
+    // 캐쉬 충전 함수
+    async function chargeCash(amount) {
+      try {
+        const response = await fetch(`${BASE_URL}/users/cash`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({ amount }) // 금액 전달
+        });
+
+        if (!response.ok) {
+          throw new Error('충전 실패');
+        }
+
+        const result = await response.json();
+
+        alert(`messag: ${result.message}`);
+        closePopup(); // 팝업 닫기
+      } catch (error) {
+        console.error('API 호출 오류:', error);
+        alert('충전에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+
+    // 버튼 이벤트
+    chargeButton.addEventListener('click', openPopup);
+    cancelButton.addEventListener('click', closePopup);
+    confirmButton.addEventListener('click', () => {
+      const amount = parseInt(cashAmountInput.value, 10);
+      if (isNaN(amount) || amount <= 0) {
+        alert('유효한 금액을 입력해주세요.');
+        return;
+      }
+      chargeCash(amount);
+      fetchAssets()
+    });
 
     // API 요청 함수
     async function fetchGachaResults(count, pickup) {
@@ -261,8 +417,13 @@
       }
     }
 
+    document.getElementById("agent-champion").addEventListener("click", () => {
+  window.location.href = "agent.html";
+});
+fetchUserInfo()
     // 페이지 로드 시 재화 데이터를 가져옴
     window.addEventListener("load", fetchAssets);
   </script>
+  
 </body>
 </html>
