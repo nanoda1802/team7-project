@@ -141,7 +141,7 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
               },
               myAgent: {
                 update: {
-                  where: { agentKey: agent.agentKey },
+                  where: { userKey_agentKey: { agentKey: myAgent.agentKey, userKey: myAgent.userKey } },
                   data: {
                     count: { decrement: +count },
                   },
@@ -192,7 +192,7 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
             },
             myAgent: {
               update: {
-                where: { agentKey: agent.agentKey },
+                where: { userKey_agentKey: { agentKey: myAgent.agentKey, userKey: myAgent.userKey } },
                 data: {
                   count: { decrement: +count },
                 },
