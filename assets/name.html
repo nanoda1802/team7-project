@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 이름 조회</title>
+</head>
+<body>
+  <h1>사용자 정보</h1>
+  <div>
+    <p>이름: <span id="user-name">불러오는 중...</span></p>
+  </div>
+
+  <script>
+    const BASE_URL = 'http://localhost:9999/api';
+
+    async function fetchUserInfo() {
+      try {
+        const response = await fetch(`${BASE_URL}/users`, {
+          method: 'GET',
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('사용자 정보를 가져오는 데 실패했습니다.');
+        }
+        const result = await response.json();
+        console.log(result);
+        const userName = result.data.nickname; // 서버에서 받은 사용자 이름
+        document.getElementById('user-name').textContent = userName; // HTML에 사용자 이름 표시
+
+      } catch (error) {
+        console.error(error);
+        document.getElementById('user-name').textContent = '이름을 불러오는 데 오류가 발생했습니다.'; // 에러 처리
+      }
+    }
+
+    // 페이지 로드 시 사용자 정보 가져오기
+    window.onload = fetchUserInfo;
+  </script>
+</body>
+</html>
