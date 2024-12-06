@@ -348,7 +348,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             //픽업 확률 초기화
             countS = 0;
             // 나온값 을 저장
-            results.push({ agent: selectedAgent });
+            results.push({ agent: selectedAgent, countS, countA });
             // DB에 업데이트
             await updateMyAgentsTransaction(tx, user.userKey, selectedAgent.agentKey, selectedAgent.name);
             continue;
@@ -357,7 +357,7 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
           if (countA === 5) {
             const selectedAgent = getRandomAgent(aAgents);
             countA = 0;
-            results.push({ agent: selectedAgent });
+            results.push({ agent: selectedAgent, countS, countA });
             await updateMyAgentsTransaction(tx, user.userKey, selectedAgent.agentKey, selectedAgent.name);
             continue;
           }
@@ -368,13 +368,13 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             enhancerCount++;
             countA++;
             countS++;
-            results.push({ agent: "enhancer" });
+            results.push({ agent: "enhancer", countS, countA });
           // 기본 A급 챔피언 확률
           } else if (random <= 0.94) {
             const selectedAgent = getRandomAgent(aAgents);
             countA = 0;
             countS++;
-            results.push({ agent: selectedAgent });
+            results.push({ agent: selectedAgent, countS, countA });
             await updateMyAgentsTransaction(
               tx,
               user.userKey,
@@ -383,10 +383,11 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             );
           // 기본 S급 챔피언 확률
           } else {
+            //픽업 확률 적용
             const selectedAgent = getRandomAgent(sAgents, pickup);
             countS = 0;
             countA++;
-            results.push({ agent: selectedAgent });
+            results.push({ agent: selectedAgent, countS, countA });
             await updateMyAgentsTransaction(tx,user.userKey,selectedAgent.agentKey,selectedAgent.name
             );
           }
@@ -426,7 +427,11 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
 );
 
 // 챔피언 강화
-router.patch("/users/agents/intensify", authMiddleware, champVerification, async (req, res) => {
+router.patch(
+  "/users/agents/intensify",
+  authMiddleware,
+  champVerification,
+  async (req, res) => {
     try {
       const { user, agent } = req;
 
@@ -449,27 +454,15 @@ router.patch("/users/agents/intensify", authMiddleware, champVerification, async
         return res.status(400).json({ message: "이미 15강입니다." });
       }
 
-      // 보유 재료 확인
-      const materials = await prisma.assets.findFirst({
-        where: { userKey: user.userKey },
-      });
       // 현재 강화 확률 계산
       const successRate = getSuccessRate(currentLevel);
       const successRatePercentage = Math.round(successRate * 100); // 퍼센트로 변환
-
-      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
-      const hasEnoughEnhancer =
-        materials.enhancer >= requiredMaterials.enhancer;
-
-      if (!checkMaterials(materials, requiredMaterials)) {
-        return res.status(400).json({ message: "강화 재료가 부족합니다." });
-      }
 
       // 강화 시도 (확률에 따라 성공 여부 결정)
       const success = Math.random() < successRate; // 성공 확률
       let nextLevel = currentLevel;
       let message = ""; // 메시지 초기화
-      let warningMessage = ""; // 경고 메시지 초기화
+      let warningMessage = "9강 이하에서는 강화레벨이 하락하지 않습니다!!"; // 경고 메시지 초기화
 
       if (currentLevel >= 10) {
         warningMessage = "주의! 10강부터 강화실패하면 레벨이 1 떨어집니다!!";
@@ -487,17 +480,56 @@ router.patch("/users/agents/intensify", authMiddleware, champVerification, async
           message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했습니다.`;
         }
       }
-      // level +ddd
-      // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
-      await prisma.$transaction(async (prisma) => {
-        await prisma.myAgents.update({
-          where: {
-            myAgentKey: player.myAgentKey,
-          },
-          data: { level: nextLevel },
-        });
-        await deductMaterials(user.userKey, requiredMaterials);
+
+      // 보유 재료 확인
+      const materials = await prisma.assets.findFirst({
+        where: { userKey: user.userKey },
       });
+
+      const requiredMaterials = getMaterials(currentLevel + 1); // 다음 레벨에 필요한 재료
+      //       그 모든걸 저장      현재 강화 재료갯수  >=    강화에 필요한 강화 재료 갯수
+      const hasEnoughEnhancer =
+        materials.enhancer >= requiredMaterials.enhancer; // 강화재료 부족한지 아님 가능한지 확인해주는 함수
+
+      // 강화 재료가 부족한 경우
+      if (!hasEnoughEnhancer) {
+        //마일리지 갯수 확인
+        if (materials.mileage < 100 * requiredMaterials.enhancer) {
+          return res.status(400).json({
+            message:
+              "강화 재료가 부족하고 마일리지도 부족해 강화진행을 못합니다!!",
+          });
+        } else {
+          // 마일리지 사용 (레벨이 오름)
+          // 마일리지는 강화재료의 * 100 개 사용
+          await prisma.$transaction(async (prisma) => {
+            await prisma.myAgents.update({
+              where: {
+                myAgentKey: player.myAgentKey,
+              },
+              data: { level: nextLevel },
+            });
+            await prisma.assets.update({
+              where: { userKey: user.userKey },
+              data: {
+                mileage: { decrement: 100 * requiredMaterials.enhancer },
+              },
+            });
+          });
+        }
+      } else {
+        // 강화 재료가 충분할 경우 강화 재료 사용
+        // 트랜잭션을 통해 강화 결과 데이터베이스에 반영
+        await prisma.$transaction(async (prisma) => {
+          await prisma.myAgents.update({
+            where: {
+              myAgentKey: player.myAgentKey,
+            },
+            data: { level: nextLevel },
+          });
+          await deductMaterials(user.userKey, requiredMaterials);
+        });
+      }
 
       // 강화 시도 완료 시 상태코드와 강화 결과 반환
       return res.status(201).json({
@@ -505,6 +537,7 @@ router.patch("/users/agents/intensify", authMiddleware, champVerification, async
         warnig: warningMessage, // 떨어질수도 있단 경고 메시지 추가
         successRate: `${successRatePercentage}%`, // 퍼센트로 보이게 변경
         currentMaterials: materials.enhancer, // 현재 보유한 강화 재료 수량 표시
+        currentMileage: materials.mileage - (hasEnoughEnhancer ? 0 : 100), // 현재 마일리지 표시
       });
     } catch (error) {
       console.error(error);
