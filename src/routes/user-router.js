@@ -99,7 +99,6 @@ router.post('/sign-up', async (req, res) => {
 
 router.get('/users', authMiddleware, async (req, res, naxt) => {
   const { user } = req ;
-  console.log(user)
   try{
    
   return res
