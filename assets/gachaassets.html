@@ -186,17 +186,18 @@
           body: JSON.stringify({count, pickup}),
         });
 
+        
         if (!response.ok) {
           throw new Error("가챠 요청 실패!");
         }
-
         const { results } = await response.json();
+        console.log(results[0].agent)
         displayCards(results);
 
         fetchAssets();
       } catch (error) {
         console.error(error);
-        alert("가챠 결과를 불러오는 데 실패했습니다.");
+        alert(`가챠 결과를 불러오는 데 실패했습니다.`);
       }
     }
 

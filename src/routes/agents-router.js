@@ -105,32 +105,34 @@ router.get("/users/agents", authMiddleware, async (req, res, next) => {
   return res.status(200).json({ data: showMyAgents });
 });
 
+//보유 챔피언 하나만 조회.
 router.get("/users/agents/:agentKey", authMiddleware, async (req, res, next) => {
-  const { user } = req
-  const agentKey = req.params.agentKey;
-
-  const showMyAgents = await prisma.myAgents.findFirst({
-    where: { agentKey: +agentKey, userKey: user.userKey },
-    select: {
-      agentKey: true,
-      name: true,
-      class: true,
-      level: true,
-      count: true,
-      agent: {
-        select: {
-          team: true,
-          position: true,
-          grade: true,
+    const { user } = req
+    const agentKey = req.params.agentKey;
+  
+    const showMyAgents = await prisma.myAgents.findFirst({
+      where: { agentKey: +agentKey, userKey: user.userKey },
+      select: {
+        agentKey: true,
+        name: true,
+        class: true,
+        level: true,
+        count: true,
+        agent: {
+          select: {
+            team: true,
+            position: true,
+            grade: true,
+          },
         },
       },
-    },
+    });
+  
+    return res
+      .status(200)
+      .json({ data: showMyAgents });
   });
 
-  return res
-    .status(200)
-    .json({ data: showMyAgents });
-});
 
 // 챔피언 매각
 router.patch("/users/agents/sale", authMiddleware, champVerification, async (req, res, next) => {
@@ -257,25 +259,23 @@ router.patch("/users/agents/sale", authMiddleware, champVerification, async (req
 // 챔피언 뽑기
 router.patch("/users/agents/gacha", authMiddleware, champVerification, async (req, res, next) => {
     try {
-      const { count,pickup } = req.body;
+      const { count, pickup } = req.body;
       const { agent, user } = req;
       let enhancerCount = 0;
       let totalCost = 0;
       let totalMileage = 0;
       const validCount = [1,10]
-
       // 횟수 확인
-      if (!count || isNaN(+count) || !validCount.includes(count) ) return res
+      if (!count || isNaN(+count) || !validCount.includes(+count) ) return res
           .status(400)
           .json({
             errorMessage: "뽑을 횟수는 <count> 숫자(양의 정수)로 입력해주세요.",
           });
-
+         
       // 픽업 챔피언 확인
       if (agent.grade !== "s") return res
           .status(400)
           .json({ errorMessage: "<pickup> 챔피언은 S급이여야 합니다!" });
-
       //할인 적용
       if (count >= 10) {
         totalCost = count * 900;
@@ -284,7 +284,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         totalCost = count * 1000;
         totalMileage = count * 10;
       }
-
       // 비용 확인
       const userAssets = await prisma.assets.findUnique({
         where: { userKey: user.userKey },
@@ -294,7 +293,8 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         .json({ errorMessage: "캐시가 부족합니다." });
       let countA = userAssets.countA;
       let countS = userAssets.countS;
-
+      
+      console.log(userAssets);
       // 총 챔피언 조회
       const agents = await prisma.agents.findMany({
         select: {
@@ -332,6 +332,9 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
             // 가중치가 랜덤에 걸렸을때.
             return agents[i]; //그 가중치의 선수.
           }
+        }
+        return agents[agents.length - 1]; //이건 만약 오류나면 그냥 마지막꺼 내놓음.
+      }
 
       // agent업데이트 트랜잭션
       async function updateMyAgentsTransaction(tx, userKey, agentKey, name) {
@@ -432,7 +435,6 @@ router.patch("/users/agents/gacha", authMiddleware, champVerification, async (re
         });
 
     } catch (error) {
-      console.error(error);
       return res
         .status(500)
         .json({ error: "서버 오류" });
@@ -487,7 +489,7 @@ router.patch("/users/agents/intensify",authMiddleware,champVerification, async (
           message = `${currentLevel}강에서 ${nextLevel}강으로 강화가 실패했습니다.`;
         }
       }
-      console.log(currentLevel);
+
       // 보유 재료 확인
       const materials = await prisma.assets.findFirst({
         where: { userKey: user.userKey },
@@ -645,3 +647,4 @@ async function deductMaterials(userID, requiredMaterials) {
 
 
 export default router;
+

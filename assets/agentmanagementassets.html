@@ -6,14 +6,72 @@
   <title>카드 관리</title>
 
   <style>
-   .card-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 20px;
-    background-color: #f4f4f9; /* 로그인 페이지 배경색과 일치 */
-  }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* 중앙 정렬 */
+      justify-content: flex-start;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 60%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #ffffff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 15px;
+      border: 1px solid #ddd;
+      text-align: center;
+      font-size: 18px;
+      width: 33.3333333333%;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    td {
+      color: #555;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    #card-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin: 20px auto;
+      width: 80%;
+      height: 425px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
 
   /* 카드 레이아웃 */
   .card-grid {
@@ -283,9 +341,22 @@
     <div class="card-grid" id="card-container">
       <!-- 서버에서 받은 캐릭터 카드가 여기에 표시됩니다 -->
     </div>
-    <div class="resources">
-      보유 재화: 1,000 골드
-    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>캐쉬</th>
+          <th>마일리지</th>
+          <th>재료</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td id="cash">-</td>
+          <td id="mileage">-</td>
+          <td id="enhancer">-</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="popup-overlay" id="popup-overlay"></div>
@@ -738,10 +809,33 @@ if (!agents || agents.length === 0) {
   }
 }
 
+async function fetchAssets() {
+      try {
+        const response = await fetch(`${BASE_URL}/users/assets`, {
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}` // 토큰 추가
+          }
+        });
+
+        if (!response.ok) throw new Error("보유 재화 정보를 가져오지 못했습니다.");
+
+        const { data } = await response.json();
+
+        // 테이블에 데이터를 채움
+        document.getElementById("cash").textContent = data.cash || 0;
+        document.getElementById("mileage").textContent = data.mileage || 0;
+        document.getElementById("enhancer").textContent = data.enhancer || 0;
+      } catch (error) {
+        console.error(error);
+        alert("보유 재화 정보를 불러오는 데 실패했습니다.");
+      }
+    }
+
 // 팝업 오버레이 클릭 시 닫기
 document.getElementById('popup-overlay').addEventListener('click', closePopup);
 
-// 초기 실행
+window.addEventListener("load", fetchAssets);
     loadAgents();
     </script>
 
