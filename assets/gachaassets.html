@@ -380,10 +380,13 @@
         // 강화재료 처리
         if (result.agent === "enhancer") {
           card.innerHTML = `
-            <div class="card-header">강화 재료</div>
+          <img src="https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/90b5d5184cec068923b26231f963dd6637a2c526-1920x1080.jpg?auto=format&fit=fill&q=80&w=1302" alt="강화재료" class="card-image" />
+          <div class="card-content">  
+            <h2 class="card-title">강화 재료</h2>
             <div class="card-body">
-              <span>등급: 재료</span>
+              <p class="card-description"n>등급: 재료</p>
             </div>
+          </div>
           `;
         } else {
           card.innerHTML = `
