@@ -102,6 +102,10 @@
   margin-top: 20px;
 }
 
+#card-s {
+  color: #007bff;
+}
+
 .card:hover {
   transform: translateY(-10px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
@@ -397,7 +401,17 @@
             </div>
           </div>
           `;
+        } else if (result.agent.grade === "s") {
+          console.log(result.agent)
+          card.innerHTML = `
+          <img src="${result.agent.url}" alt="${result.agent.name}" class="card-image" />
+        <div class="card-content">
+          <h2 class="card-title" id="card-s">${result.agent.name} ${result.agent.grade.toUpperCase()}급</h2>
+          <p class="card-description">포지션: ${result.agent.position}<br>팀: ${result.agent.team}</p>
+        </div>
+          `;
         } else {
+          console.log(result.agent)
           card.innerHTML = `
           <img src="${result.agent.url}" alt="${result.agent.name}" class="card-image" />
         <div class="card-content">
