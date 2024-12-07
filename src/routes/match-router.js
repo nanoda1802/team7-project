@@ -41,7 +41,7 @@ const checkSquadScore = async (user) => {
         },
       },
     });
-
+    // [2-3] 돌파 수치에 맞게 특화 능력치 강화
     if (agents.position === "warrior") {
       agents.stat["ad"] *= 1 + agents.myAgent[0].class * 0.1;
       agents.stat["crit"] *= 1 + agents.myAgent[0].class * 0.1;
@@ -53,7 +53,7 @@ const checkSquadScore = async (user) => {
       agents.stat["mp"] *= 1 + agents.myAgent[0].class * 0.1;
     }
 
-    // [2-3] 수치에 맞게 능력치 변동 적용
+    // [2-4] 강화 수치에 맞게 능력치 전반 강화 후 공격대 종합 스탯에 누적
     squadScore += Object.values(agents.stat).reduce(
       (acc, cur) => (acc += cur * (1 + agents.myAgent[0].level * 0.02)),
       0
@@ -263,14 +263,7 @@ router.get("/users/ranks", async (req, res, next) => {
   //출력용 json
   let resJson = [];
   const ranking = await prisma.ranks.findMany({
-    orderBy: [
-      {
-        mmr: "desc",
-      },
-      {
-        loseCount: "asc",
-      },
-    ],
+    orderBy: [{ mmr: "desc" }, { loseCount: "asc" }],
     select: {
       userKey: true,
       winCount: true,
@@ -290,11 +283,13 @@ router.get("/users/ranks", async (req, res, next) => {
   });
 
   for (let i = 0; i < ranking.length; i++) {
+    // 대표 캐릭터 이름 출력값 설정
     const agent = agents.find((e) => e.agentKey === ranking[i].user.favoriteAgent) || { name: "미설정" };
-
+    // 승률 계산
     const winningRate =
       Math.round((ranking[i].winCount / (ranking[i].winCount + ranking[i].loseCount + ranking[i].drawCount)) * 100) ||
       0;
+    // 전개구문 활용해 응답할 랭킹 배열 만들기
     resJson = [
       ...resJson,
       {
@@ -364,7 +359,7 @@ router.put("/users/formation", authMiddleware, champVerification, async (req, re
   // 반환
   return res.status(201).json({
     message: "성공적으로 팀이 편성되었습니다.",
-    squd: [
+    squad: [
       `${myAgent[0].name}(${agent[0].position})`,
       `${myAgent[1].name}(${agent[1].position})`,
       `${myAgent[2].name}(${agent[2].position})`,

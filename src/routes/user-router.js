@@ -23,51 +23,34 @@ router.post("/sign-up", async (req, res) => {
     // @와 \.: 이메일 형식에서 반드시 필요한 기호.
     // username@domain.com 형식의 기본 이메일 구조를 검증.
     //공백, @ 중복 등을 방지.
-    const pwRegex =
-      /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{6,}$/;
     // 비밀번호가 영어 소문자, 숫자, 특수기호를 포함하고 6자 이상인지 확인하는 정규식
+    const pwRegex = /^(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*])[a-zA-Z\d!@#$%^&*]{6,}$/;
 
     // 아이디(이메일) 형식 유효성 검증
-    if (!id || !idRegex.test(id))
-      return res
-        .status(400)
-        .json({ errorMessage: "아이디는 이메일 형태로 입력해주세요" });
+    if (!id || !idRegex.test(id)) return res.status(400).json({ errorMessage: "아이디는 이메일 형태로 입력해주세요" });
 
     // 비밀번호 유효성 검증
     if (!pw || !pwRegex.test(pw))
       return res.status(400).json({
-        errorMessage:
-          "비밀번호는 영어 소문자, 숫자, 특수기호 하나 이상 혼합하여 6자 이상으로 작성해주세요",
+        errorMessage: "비밀번호는 영어 소문자, 숫자, 특수기호 하나 이상 혼합하여 6자 이상으로 작성해주세요",
       });
 
     // 비밀번호 확인 입력 여부 검증
-    if (!pwCheck)
-      return res
-        .status(400)
-        .json({ errorMessage: "비밀번호 확인용<pwCheck>를 입력해주세요" });
+    if (!pwCheck) return res.status(400).json({ errorMessage: "비밀번호 확인용<pwCheck>를 입력해주세요" });
 
     // 비밀번호와 비밀번호 확인 값 일치 여부 검증
-    if (pw !== pwCheck)
-      return res
-        .status(401)
-        .json({ errorMessage: "비밀번호가 일치하지 않습니다" });
+    if (pw !== pwCheck) return res.status(401).json({ errorMessage: "비밀번호가 일치하지 않습니다" });
 
     // 이미 동일한 아이디가 존재하는지 데이터베이스에서 확인.
     const isExistUser = await prisma.users.findFirst({ where: { id } });
     // 중복된 아이디가 있으면 409 상태 코드와 에러 메시지를 반환.
-    if (isExistUser)
-      return res
-        .status(409)
-        .json({ errorMessage: "이미 존재하는 아이디입니다" });
+    if (isExistUser) return res.status(409).json({ errorMessage: "이미 존재하는 아이디입니다" });
 
     // 닉네임 중복 확인
     const isExistUserByNickname = await prisma.users.findFirst({
       where: { nickname },
     });
-    if (isExistUserByNickname)
-      return res
-        .status(409)
-        .json({ errorMessage: "이미 존재하는 닉네임입니다" });
+    if (isExistUserByNickname) return res.status(409).json({ errorMessage: "이미 존재하는 닉네임입니다" });
 
     // 비밀번호를 암호화(bcrypt 사용)하여 저장.
     const hashedPassword = await bcrypt.hash(pw, 10);
@@ -100,24 +83,17 @@ router.post("/sign-up", async (req, res) => {
   }
 });
 
-router.get('/users', authMiddleware, async (req, res, naxt) => {
-  const { user } = req ;
-  try{
-   
-  return res
-  .status(200)
-  .json({ 
-    data: user
-  });
-} catch (err) {
-console.error(err);
-return res
-  .status(500)
-  .json({ message: "유저 조회 중 오류가 발생했습니다." });
-}
-})
-
-
+router.get("/users", authMiddleware, async (req, res, naxt) => {
+  const { user } = req;
+  try {
+    return res.status(200).json({
+      data: user,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "유저 조회 중 오류가 발생했습니다." });
+  }
+});
 
 // ** 로그인 API **
 // 사용자의 로그인 요청을 처리합니다.
@@ -128,18 +104,12 @@ router.post("/sign-in", async (req, res) => {
     // 데이터베이스에서 아이디를 기준으로 사용자 조회
     const user = await prisma.users.findFirst({ where: { id } });
     // 사용자가 존재하지 않을 경우 404 상태 코드와 에러 메시지 반환
-    if (!user)
-      return res
-        .status(404)
-        .json({ errorMessage: "존재하지 않는 아이디입니다" });
+    if (!user) return res.status(404).json({ errorMessage: "존재하지 않는 아이디입니다" });
 
     // 입력된 비밀번호와 데이터베이스의 암호화된 비밀번호를 비교
     const isPasswordValid = await bcrypt.compare(pw, user.pw);
     // 비밀번호가 일치하지 않으면 401 상태 코드와 에러 메시지 반환
-    if (!isPasswordValid)
-      return res
-        .status(401)
-        .json({ errorMessage: "비밀번호가 일치하지 않습니다" });
+    if (!isPasswordValid) return res.status(401).json({ errorMessage: "비밀번호가 일치하지 않습니다" });
 
     // 비밀번호가 일치하면 JWT 생성
     const token = jwt.sign(
@@ -149,7 +119,7 @@ router.post("/sign-in", async (req, res) => {
       process.env.SECRET_KEY, // 비밀 키를 사용하여 서명
       { expiresIn: "1h" } // 토큰 유효 기간을 1시간으로 설정
     );
-    // 성공 시 헤더에 authorization 토큰 추가
+    // 성공 시 authorization 헤더에 토큰 추가
     res.setHeader("authorization", `Bearer ${token}`);
     // 로그인 성공 메시지와 사용자 키 반환
     return res.status(200).json({
@@ -169,11 +139,9 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
     // 변수 선언
     const { amount } = req.body;
 
-    if (isNaN(+amount) || amount <= 0) return res
-      .status(400)
-      .json({ message: "유효한 금액을 입력해주세요." });
+    if (isNaN(+amount) || amount <= 0) return res.status(400).json({ message: "유효한 금액을 입력해주세요." });
 
-    const mileage = Math.trunc(amount / 100)
+    const mileage = Math.trunc(amount / 100);
 
     await prisma.assets.update({
       where: { userKey: user.userKey },
@@ -183,18 +151,14 @@ router.patch("/users/cash", authMiddleware, async (req, res, next) => {
       },
     });
 
-    return res
-      .status(200)
-      .json({ 
-        message: `${amount}만큼 충전되었습니다.`,
-        amount,
-        mileage
-      });
+    return res.status(200).json({
+      message: `${amount}만큼 충전되었습니다.`,
+      amount,
+      mileage,
+    });
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "서버 오류가 발생했습니다" });
+    return res.status(500).json({ message: "서버 오류가 발생했습니다" });
   }
 });
 
@@ -211,8 +175,7 @@ router.get("/users/assets", authMiddleware, async (req, res, next) => {
       },
     });
 
-    if (!assets)
-      return res.status(404).json({ errorMessage: "보유한 재화가 없습니다." });
+    if (!assets) return res.status(404).json({ errorMessage: "보유한 재화가 없습니다." });
 
     const data = {
       cash: assets.cash,
@@ -226,9 +189,7 @@ router.get("/users/assets", authMiddleware, async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return res
-      .status(500)
-      .json({ message: "캐시 조회 중 오류가 발생했습니다." });
+    return res.status(500).json({ message: "캐시 조회 중 오류가 발생했습니다." });
   }
 });
 export default router;
