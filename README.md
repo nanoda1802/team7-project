@@ -4,6 +4,8 @@
 
 Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이를 이용해 전투 시뮬레이션을 실행합니다!. 이에 구현한 기능은 아래와 같습니다.
 
+- API
+
 ### 계정 
 - 계정 생성(회원가입)
 - 로그인
@@ -24,6 +26,14 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 - 챔피언 강화
 
 ## 프로젝트 컨셉
+
+- 설계한 초기 DB(MySql)
+
+![초기ERD](https://github.com/user-attachments/assets/386d2fdd-aa98-411f-9057-a129cde9df30)
+
+- 수정한 프로젝트 DB(MySql)
+
+![마지막ERD](https://github.com/user-attachments/assets/7d33f06c-b31c-4d83-b069-0afe0bfbffed)
 
 ### 회원가입 
 
