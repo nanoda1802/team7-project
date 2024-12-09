@@ -107,7 +107,7 @@
 
 - 수정한 프로젝트 DB(MySql)
 
-![마지막ERD](https://github.com/user-attachments/assets/7d33f06c-b31c-4d83-b069-0afe0bfbffed)
+![마지막ERD](https://github.com/user-attachments/assets/e7d7ffe7-1f4e-4c25-a335-94ef013ee927)
 
 ### Users 
 
