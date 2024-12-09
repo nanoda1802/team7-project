@@ -18,6 +18,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 ### 챔피언
 - 챔피언 도감 조회
+- 보유 챔피언 조회
 - 챔피언 뽑기(+ 픽업 선택 기능)
 - 챔피언 판매
 - 챔피언 강화
@@ -36,7 +37,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 5. 회원가입 성공 시, 사용자에게 정보를 전달합니다
 
-![sing-up](https://files.slack.com/files-tmb/T06B9PCLY1E-F0846GZGD8B-df8713b103/_____________720.png)
+![sing-up](https://github.com/user-attachments/assets/68ee0518-4f9e-4d4e-9a66-3484d8f30094)
 
 ### 로그인
 
@@ -46,7 +47,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 3. 추가로 사용자에게 로그인 되었다는 사실을 전달합니다.
 
-![log-in](https://files.slack.com/files-tmb/T06B9PCLY1E-F0843Q6RJ2H-39eb77381e/__________720.png)
+![log-in](https://github.com/user-attachments/assets/b3d2868d-5326-45e9-9872-6ae904ad585d)
 
 ### 재화(캐시) 충전
 
@@ -56,7 +57,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 3. 충전된 만큼을 사용자에게 전달합니다.
 
-![cash](https://files.slack.com/files-tmb/T06B9PCLY1E-F0846HQR3U3-f60a5ab13d/_____________720.png)
+![캐쉬충전](https://github.com/user-attachments/assets/1ef2c11e-2b7f-4620-aeaa-2281f5272159)
 
 ### 재화 조회
 
@@ -64,7 +65,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 2. 본인이 가지고 있는 재화(강화재료, 마일리지, 캐시)를 전달합니다.
 
-![cash-get](https://files.slack.com/files-pri/T06B9PCLY1E-F0846KWCD42/__________________.png)
+![재화조회](https://github.com/user-attachments/assets/2de41f0b-2f03-40fd-b0dc-f0bc89346ae9)
 
 ### 팀 편성
 
@@ -78,7 +79,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 5. 편성된 팀과 활성화된 시너지를 사용자에게 전달합니다.
 
-![team](https://files.slack.com/files-tmb/T06B9PCLY1E-F084KATLMUH-9c515de019/image_720.png)
+![팀편성](https://github.com/user-attachments/assets/32b0c992-d774-4657-a0c7-65c1b11d5bbf)
 
 ### 대표 챔피언 설정
 
@@ -88,16 +89,89 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 3. 챔피언의 존재유무를 확인하여 존재할 시, 대표 챔피언으로 설정하며 이를 사용자에게 전달합니다.
 
-![champ](https://files.slack.com/files-tmb/T06B9PCLY1E-F0846HF2E75-f75bd72654/image_720.png)
+![대표챔프설정](https://github.com/user-attachments/assets/fe711369-da59-4f92-ae14-bcd9a1000b0a)
 
 ### 전투 (정규, 친선)
 
+1. 로그인 된 상태(헤더에 로그인 시 지급받은 토큰이 유효할 때) 를 확인합니다.
+
+2. 친선전을 진행할 유저의 닉네임을 받습니다(친선) / 자신과 비슷한 점수(MMR)을 가진 유저를 찾습니다.
+
+3. 사용자와 상대방의 점수를 계산/비교 하여 패배/승리를 정해줍니다.
+
+  1. 점수를 계산할 때 팀의 시너지 가중치, 포지션에 따른 스탯 가중치, 챔프의 강화/승급 레벨에 따른 가중치가 적용됩니다.
+
+4. 결과를 사용자에게 전달합니다.
+
+- 친선전
+
+![친선전](https://github.com/user-attachments/assets/fb578036-8500-44f6-8429-2ffab025825c)
+
+- 정규전
+
+![정규전](https://github.com/user-attachments/assets/dc6a2fdd-c1af-4a23-9c15-03b26d7837d8)
+
 ### 랭킹 조회
+
+점수(mmr) 와 승률(패배횟수가 적은 경우)로 정렬하여 TOP10의 결과를 보여줍니다.
+
+![랭킹조회](https://github.com/user-attachments/assets/779131bc-9332-48c1-b8d2-2d2c075d161e)
 
 ### 챔피언 도감 조회
 
+DB에 저장된 챔프 도감을 사용자에게 전달합니다.
+
+![챔프도감조회](https://github.com/user-attachments/assets/0109665d-bb6f-41c3-8dde-463f058e9044)
+
+### 보유 챔피언 조회
+
+1. 로그인 된 상태(헤더에 로그인 시 지급받은 토큰이 유효할 때) 를 확인합니다.
+
+2. 보유하고 있는 챔프를 사용자에게 전달합니다.
+
+![보유챔프조회](https://github.com/user-attachments/assets/0edd6389-b793-4a52-90b1-6f84781786fd)
+
 ### 챔피언 뽑기(픽업 선택)
+
+1. 로그인 된 상태(헤더에 로그인 시 지급받은 토큰이 유효할 때) 를 확인합니다.
+
+2. 입력받은 횟수만큼의 캐쉬가 충분한지 DB에서 확인을 합니다.
+
+3. 픽업 챔프를 입력으로 받고, S급 챔프인지 확인합니다. (아닐경우 거부)
+
+4. 챔프를 일정 확률(S급 6% / A급 24% / 강화재료 70%)로 획득하며, 50개를 뽑았을 경우 픽업 챔프를 확정으로 획득하게 됩니다  
+(50개가 채워지기 전에 S급이 뽑히면 스택이 초기화 됩니다.)
+
+5. 획득된 목록을 사용자에게 전달합니다.
+
+![챔프뽑기](https://github.com/user-attachments/assets/8602b883-b004-46df-9b2c-0a9c89629be9)
 
 ### 챔피언 판매
 
-### 챔피언 강화
+1. 로그인 된 상태(헤더에 로그인 시 지급받은 토큰이 유효할 때) 를 확인합니다.
+
+2. 매각할 챔프가 유저가 충분히 소유하고 있는지 확인합니다.
+
+3. 챔프를 충분히 소지하였을 경우, 이를 판매하여 캐쉬를 지급 받습니다.
+
+![챔프매각](https://github.com/user-attachments/assets/c5f50203-beca-40ac-808c-041abd95d0e7)
+   
+### 챔피언 강화 / 승급
+
+1. 로그인 된 상태(헤더에 로그인 시 지급받은 토큰이 유효할 때) 를 확인합니다.
+
+2. 강화/승급할 챔피언을 입력으로 받아 소유 여부 및 존재 여부를 확인합니다.
+
+- 챔피언 강화
+
+  1. 챔피언의 강화레벨에 따라 필요한 강화재료를 확인합니다(추가로 부족할 경우 100 마일리지 당 강화재료 1개로 치환합니다)
+ 
+  2. 재료가 충분할 경우, 강화레벨에 따른 가변확률로 강화 성공 여부를 정합니다.(최대 15레벨)
+ 
+  3. 강화 결과를 사용자에게 전달합니다.
+ 
+- 챔피언 승급
+
+  1. 선택한 챔피언이 사용자에게 2개 이상 존재하는지 확인 합니다.
+     
+  2. 소유한 챔피언을 -1 하며 챔피언의 승급레벨을 +1 올립니다.(최대 6레벨)
