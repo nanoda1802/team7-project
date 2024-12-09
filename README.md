@@ -25,15 +25,116 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 - 챔피언 판매
 - 챔피언 강화
 
-## 프로젝트 컨셉
+---
 
+## Data Base 소개 
 - 설계한 초기 DB(MySql)
 
 ![초기ERD](https://github.com/user-attachments/assets/386d2fdd-aa98-411f-9057-a129cde9df30)
 
+초기 DB 설계에선 뽑기내역 및 충전내역을 확인하기 위해 테이블을 생성해 두었으나, 
+관련 기능구현을 배제함에 따라 삭제하게 되었습니다.
+
 - 수정한 프로젝트 DB(MySql)
 
 ![마지막ERD](https://github.com/user-attachments/assets/7d33f06c-b31c-4d83-b069-0afe0bfbffed)
+
+### Users 
+
+사용자의 정보를 저장해두기 위한 테이블입니다.
+
+- Userkey
+
+  유저의 초기 Pettie TFT
+
+## 프로젝트 소개
+
+Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이를 이용해 전투 시뮬레이션을 실행합니다!. 이에 구현한 기능은 아래와 같습니다.
+
+- API
+
+### 계정 
+- 계정 생성(회원가입)
+- 로그인
+- 재화 충전
+- 재화 조회
+
+### 전투
+- 팀 편성
+- 대표 챔피언 지정
+- 전투(정규, 친선)
+- 랭킹 조회
+
+### 챔피언
+- 챔피언 도감 조회
+- 보유 챔피언 조회
+- 챔피언 뽑기(+ 픽업 선택 기능)
+- 챔피언 판매
+- 챔피언 강화
+
+---
+
+## Data Base 소개 
+- 설계한 초기 DB(MySql)
+
+![초기ERD](https://github.com/user-attachments/assets/386d2fdd-aa98-411f-9057-a129cde9df30)
+
+초기 DB 설계에선 뽑기내역 및 충전내역을 확인하기 위해 테이블을 생성해 두었으나, 
+관련 기능구현을 배제함에 따라 삭제하게 되었습니다.
+
+- 수정한 프로젝트 DB(MySql)
+
+![마지막ERD](https://github.com/user-attachments/assets/7d33f06c-b31c-4d83-b069-0afe0bfbffed)
+
+### Users 
+
+사용자의 정보를 저장해두기 위한 테이블입니다.
+
+- Userkey
+
+  유저의 기본 키(PRIMARY KEY)로 유저를 구분하기 위해 존재합니다.
+
+- Id
+
+  유저의 아이디로 이메일형식으로 저장되며, 겹치지 않도록 UNIQUE 특성을 적용하였습니다.
+ 
+- Pw
+
+  유저의 비밀번호를 bcryp를 이용해 해시화한 값으로 저장되며, 이를 이용해 로그인 성공여부를 확인하게 됩니다.
+
+- Nickname
+
+  유저가 회원가입 시 입력하는 값으로 유저의 이름입니다.
+  
+- SquadMem1~3
+
+  유저가 전투에서 사용하게될 챔프의 <agentKey>로, 팀 편성 API를 이용해 값을 저장하게 됩니다.
+
+- FavoriteAgent
+
+  유저의 대표 챔피언으로 설정할 챔프의 <agentKey>를 저장합니다.
+
+- CreatedAt
+
+  유저가 생성된(회원가입 성공) 날짜를 기록합니다. 
+
+- Synergy
+
+  팀 편성 시, 챔프의 진영이 겹치는 경우 그 진영의 이름을 저장합니다.
+  
+## Agents
+
+## Assets
+
+## Ranks
+
+## MyAgents
+
+## Stats
+
+---
+
+## 프로젝트 컨셉
 
 ### 회원가입 
 
@@ -43,7 +144,7 @@ Node.js의 express 모듈, RDBMS(MySQL)을 활용하여 팀을 구성하고, 이
 
 3. 비밀번호확인<PWCHECK> 가 입력되었으며, <PW>와 동일한가 ?
 
-4. 위의 조건들을 만족하였을 경우 회원가입에 성공하여 <ID>와 <PW>(bcrypt를 이용해 암호화)를 DB에 저장합니다.
+4. 위의 조건들을 만족하였을 경우 회원가입에 성공하여 <ID>와 <PW>(bcrypt를 이용해 암호화) 및 <NICKNAME>을 DB에 저장합니다.
 
 5. 회원가입 성공 시, 사용자에게 정보를 전달합니다
 
